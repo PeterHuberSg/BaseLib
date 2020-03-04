@@ -3,13 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29728.190
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BaseLib", "BaseLib\BaseLib.csproj", "{A4CB2341-77CB-4FB7-B186-BEBBA200C9FB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BaseLib", "BaseLib\BaseLib.csproj", "{A4CB2341-77CB-4FB7-B186-BEBBA200C9FB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BaseLibTest", "BaseLibTest\BaseLibTest.csproj", "{E5639F3F-AE33-4A62-A6BF-D27769F003B9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BaseLibTest", "BaseLibTest\BaseLibTest.csproj", "{E5639F3F-AE33-4A62-A6BF-D27769F003B9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RealTimeTracerTestConsole", "RealTimeTracerTestConsole\RealTimeTracerTestConsole.csproj", "{ECA08A89-6913-4168-9A24-64ACED08D6B6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RealTimeTracerTestConsole", "RealTimeTracerTestConsole\RealTimeTracerTestConsole.csproj", "{ECA08A89-6913-4168-9A24-64ACED08D6B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TracerTestConsole", "TracerTestConsole\TracerTestConsole.csproj", "{332F2DA0-18FF-48A6-9B29-D0887A66B092}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TracerTestConsole", "TracerTestConsole\TracerTestConsole.csproj", "{332F2DA0-18FF-48A6-9B29-D0887A66B092}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0387FC7E-10F7-43B2-9A5B-8DFF3C2F1EDE}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
