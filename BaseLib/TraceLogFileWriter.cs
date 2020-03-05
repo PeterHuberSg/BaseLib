@@ -32,12 +32,12 @@ namespace ACoreLib {
     /// <summary>
     /// File parameters like file name and location, size limitations, etc.
     /// </summary>
-    public FileParameterStruct FileParameter { get { return logFileWriter.FileParameter; } }
+    public FileParameterStruct? FileParameter { get { return logFileWriter?.FileParameter; } }
 
     /// <summary>
     /// Get the full path and name of the current file
     /// </summary>
-    public string FullName { get { return logFileWriter.FullName; } }
+    public string? FullName { get { return logFileWriter?.FullName; } }
 
     /// <summary>
     /// Text added to header line
@@ -54,11 +54,12 @@ namespace ACoreLib {
     //      -----------
 
     const string traceLogFileWriterMarker = "==================";
+
     // newFileCreated is called when existing file is full and a new file gets created. This action is called on the 
     // MessageTracker thread
-    Action newFileCreated;
-    Func<TraceMessage, bool> filter;
-    LogFileWriter logFileWriter;
+    readonly Action? newFileCreated;
+    readonly Func<TraceMessage, bool>? filter;
+    LogFileWriter? logFileWriter;
 
 
     /// <summary>
@@ -67,10 +68,10 @@ namespace ACoreLib {
     /// <param name="directoryPath">directory where the trace file should be written</param>
     /// <param name="fileName">Name of trace file, which will be followed by a running number</param>
     /// <param name="fileExtension">Extension of file, without leading dot</param>
-    /// <param name="maxFileByteCount">If trace file size is bigger, a new ftrace file gets created</param>
+    /// <param name="maxFileByteCount">If trace file size is bigger, a new trace file gets created</param>
     /// <param name="maxFileCount">If there are more than files, they will be deleted</param>
     /// <param name="logFileWriterTimerInitialDelay">msec delay before TraceLogFileWriter starts writing to the trace file</param>
-    /// <param name="logFileWriterTimerInterval">msec intervall between TraceLogFileWriter file access (writes).</param>
+    /// <param name="logFileWriterTimerInterval">msec interval between TraceLogFileWriter file access (writes).</param>
     /// <param name="newFileCreated">method to be called when a new file gets created</param>
     /// <param name="filter">method to be called when TraceLogFileWriter receives a new message. Returning true will
     /// filter out the message, it will not be written to the trace file.</param>
@@ -82,8 +83,8 @@ namespace ACoreLib {
       int maxFileCount = 5,
       int logFileWriterTimerInitialDelay = 10,
       int logFileWriterTimerInterval = 10000,
-      Action newFileCreated = null,
-      Func<TraceMessage, bool> filter = null)
+      Action? newFileCreated = null,
+      Func<TraceMessage, bool>? filter = null)
     {
       this.newFileCreated = newFileCreated;
       this.filter = filter;
@@ -116,11 +117,11 @@ namespace ACoreLib {
     ~TraceLogFileWriter() {
       Dispose(false);
     }
-    
+
 
     /// <summary>
-    /// Gets the latest trace messages from Tracer, writes them to the logfile, stops listening for further
-    /// trace messages from Tracer and closes the logfile.
+    /// Gets the latest trace messages from Tracer, writes them to the LogFile, stops listening for further
+    /// trace messages from Tracer and closes the LogFile.
     /// </summary>
     public void Dispose() {
       Dispose(true);
@@ -132,12 +133,12 @@ namespace ACoreLib {
       if (logFileWriter==null)
         return; //might not return if 2 threads Dispose at the same time
 
-      //if more than 1 Dispose() is called simultaneously by serveral threads, the first Flush will execute,
-      //while the othrer threads will just wait in Flush(), until the first thread has finished.
+      //if more than 1 Dispose() is called simultaneously by several threads, the first Flush will execute,
+      //while the other threads will just wait in Flush(), until the first thread has finished.
       if (disposing) {
         Tracer.Flush(needsStopTracing: false);
       } else {
-        //destructor, should not throw an exception is Tracer is no longer stanle
+        //destructor, should not throw an exception is Tracer is no longer stable
         try {
           Tracer.Flush(needsStopTracing: false);
         } catch (Exception ex) {
@@ -153,11 +154,11 @@ namespace ACoreLib {
     }
 
 
-    void writeMessages(TraceMessage[] TraceMessages) {
+    void writeMessages(TraceMessage[] traceMessages) {
       if (logFileWriter==null) return; //logFileWriter is disposed
 
       lock(logFileWriter){
-        foreach (TraceMessage traceMessage in TraceMessages) {
+        foreach (TraceMessage traceMessage in traceMessages) {
           if (filter!=null && filter(traceMessage)) continue;
 
           logFileWriter.WriteMessage(traceMessage.ToString());
@@ -168,9 +169,7 @@ namespace ACoreLib {
 
 
     string logFileWriter_GetNewFileHeader() {
-      if (newFileCreated!=null) {
-        newFileCreated();
-      }
+      newFileCreated?.Invoke();
       return getSeparatorLine(traceLogFileWriterMarker + " " + DateTime.Now.ToShortDateString() + "@#MachineFile#@" + getHeaderText() + " " + traceLogFileWriterMarker);
     }
 
@@ -186,8 +185,9 @@ namespace ACoreLib {
     /// </summary>
     public void Reset() {
       if (logFileWriter!=null) {
+        var templogFileWriter = logFileWriter;
         logFileWriter = null;
-        logFileWriter.Dispose();
+        templogFileWriter.Dispose();
       }
     }
     #endregion
@@ -227,7 +227,7 @@ namespace ACoreLib {
     /// Supports the changing of file name, size, etc.
     /// </summary>
     public void ChangeProperties(string newDirectoryPath, string fileName, string fileExtension, long newMaxFileByteCount, int newMaxFileCount){
-      logFileWriter.ChangeFileProperties(
+      logFileWriter!.ChangeFileProperties(
         new FileParameterStruct(newDirectoryPath, fileName, fileExtension, newMaxFileByteCount, newMaxFileCount));
     }
     

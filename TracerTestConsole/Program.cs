@@ -28,7 +28,7 @@ namespace TracerLib {
   /// </summary>
   class Program {
 
-    static void Main(string[] args) {
+    public static void Main(string[] _/*args*/) {
       Console.WindowHeight = Console.LargestWindowHeight *5 /6;
       Console.WindowWidth = Console.LargestWindowWidth *5 /6;
       Console.WriteLine("Tracer Test");
@@ -37,14 +37,14 @@ namespace TracerLib {
       bool isReadLine = true;
 
       //run only 1 test at a time
-      //testTracerSimple(); //you can uncomment line in Tracer.cs: #define RealTimeTraceing, to get detailed timing information, but it's not necessary.
-      //testTracerFlush();
-      //testSingleThread();  //comment line in Tracer.cs: #define RealTimeTraceing
-      //testMultiThread(); //most important test
-      //testTraceLogFileWriter();
-      //testTraceLogFileWriterDispose();
-      //testTraceLogFileWriterDestruct(); isReadLine = false;
-      tracerTiming();
+      //TestTracerSimple(); //you can uncomment line in Tracer.cs: #define RealTimeTraceing, to get detailed timing information, but it's not necessary.
+      //TestTracerFlush();
+      //TestSingleThread();  //comment line in Tracer.cs: #define RealTimeTraceing
+      TestMultiThread(); //most important test
+      //TestTraceLogFileWriter();
+      //TestTraceLogFileWriterDispose();
+      //TestTraceLogFileWriterDestruct(); isReadLine = false;
+      //TracerTiming();
 
       if (isReadLine) {
         Console.WriteLine("Press Enter to stop program");
@@ -73,7 +73,7 @@ namespace TracerLib {
     /// First line consists of the 2 messages '1' and '2',only then comes a new line
     /// '10' is missing, because tracing is stopped before the tracer thread can copy that message
     /// </summary>
-    static void testTracerSimple() {
+    public static void TestTracerSimple() {
       Console.WriteLine("Test Tracer Simple:");
       Console.WriteLine("Tests if a single thread can trace 10 messages, sleep 1 second and then write another message.");
       Console.WriteLine();
@@ -98,9 +98,9 @@ namespace TracerLib {
       Thread.CurrentThread.Name = "Main";
       RealTimeTracer.Trace("TestTracer(): start");
       RealTimeTracer.Trace("TestTracer(): setup MessagesTraced event");
-      Tracer.MessagesTraced += new Action<TraceMessage[]>(Tracer_LineReceived);
+      Tracer.MessagesTraced += new Action<TraceMessage[]>(tracer_LineReceived);
 
-      //tracenumbers 1 to 9 with new lines
+      //TraceNumbers 1 to 9 with new lines
       for (int i = 1; i < 10; i++) {
         RealTimeTracer.Trace("TestTracer(): Trace(" + i + ")");
         Tracer.Trace(i.ToString());
@@ -125,7 +125,7 @@ namespace TracerLib {
     }
 
 
-    static void Tracer_LineReceived(TraceMessage[] tracerMessage) {
+    static void tracer_LineReceived(TraceMessage[] tracerMessage) {
       RealTimeTracer.Trace("event Tracer_LineReceived: " + tracerMessage.Length + " messages");
     }
     #endregion
@@ -151,7 +151,7 @@ namespace TracerLib {
     /// First line consists of the 2 messages '1' and '2',only then comes a new line
     /// '10' is missing, because tracing is stopped before the tracer thread can copy that message
     /// </summary>
-    static void testTracerFlush() {
+    public static void TestTracerFlush() {
       Console.WriteLine("Test Tracer Flush:");
       Console.WriteLine("Tests if flushing and listeners to MessagesTraced work properly.");
       Console.WriteLine();
@@ -244,7 +244,7 @@ namespace TracerLib {
     }
 
 
-    static List<string> traceStrings = new List<string>();
+    static readonly List<string> traceStrings = new List<string>();
     static int expectedMessageCount;
 
 
@@ -284,9 +284,9 @@ namespace TracerLib {
 
     /// <summary>
     /// Traces a running number x times, then reads the trace and checks if the numbers are properly stored. The same code is used
-    /// for multithreaded testing, but it is easier to debug it on a single thread.
+    /// for multi threaded testing, but it is easier to debug it on a single thread.
     /// </summary>
-    static void testSingleThread() {
+    public static void TestSingleThread() {
       const int maxTestCycles = 10;
       const int maxWriteCycles = Tracer.MaxMessageBuffer / maxTestCycles;
 
@@ -360,17 +360,17 @@ namespace TracerLib {
 
 
     /// <summary>
-    /// Starts x threads, each tracing its thread number and a continously increasing number. After y seconds, the 
-    /// threads stop and the main thread verfies that for each thread each runumber is traced in the proper sequence.
+    /// Starts x threads, each tracing its thread number and a continuously increasing number. After y seconds, the 
+    /// threads stop and the main thread verifies that for each thread each number is traced in the proper sequence.
     /// </summary>
-    private static void testMultiThread() {
+    public static void TestMultiThread() {
       const int maxTestThreads = 6;
       const int waitTimeSeconds = 3;
 
       Console.WriteLine("Test Tracer on " + maxTestThreads + " Threads:");
-      Console.WriteLine("Starts multiple threads, each tracing its thread number and a continously increasing number. After " +
+      Console.WriteLine("Starts multiple threads, each tracing its thread number and a continuously increasing number. After " +
         waitTimeSeconds + " seconds, the threads stop and ");
-      Console.WriteLine("the main thread verfies that for each thread each number is traced in the proper sequence.");
+      Console.WriteLine("the main thread verifies that for each thread each number is traced in the proper sequence.");
       Console.WriteLine();
       Console.WriteLine("Expected output:");
       Console.WriteLine("start 6 test writer threads.");
@@ -379,7 +379,7 @@ namespace TracerLib {
       Console.WriteLine("Wait 1 seconds");
       Console.WriteLine("stop test writer threads.");
       Console.WriteLine("verifying trace");
-      Console.WriteLine("verify successfull");
+      Console.WriteLine("verify successful");
       Console.WriteLine();
       Console.WriteLine("Press Enter to start test.");
       Console.ReadLine();
@@ -392,8 +392,9 @@ namespace TracerLib {
       Thread[] testThreads = new Thread[maxTestThreads];
       //prepare threads
       for (int testThreadIndex = 0; testThreadIndex < maxTestThreads; testThreadIndex++) {
-        Thread testThread = new Thread(testWriter);
-        testThread.Name = "Writer " + testThreadIndex;
+        Thread testThread = new Thread(testWriter) {
+          Name = "Writer " + testThreadIndex
+        };
         testThreads[testThreadIndex] = testThread;
       }
 
@@ -452,19 +453,21 @@ namespace TracerLib {
         }
 
       }
-      Console.WriteLine("verify successfull" + Environment.NewLine);
+      Console.WriteLine("verify successful" + Environment.NewLine);
     }
 
 
-    private static void testWriter(object threadNoObject) {
-      int threadNo = (int)threadNoObject;
+    private static void testWriter(object? threadNoObject) {
+      int threadNo = (int)threadNoObject!;
       int counter = 0;
       try {
         while (doTesting) {
           Tracer.Trace(threadNo + ": " + counter++);
         }
       } catch (Exception ex) {
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
         string s = ex.ToString();
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
         System.Diagnostics.Debugger.Break();
       }
     }
@@ -474,14 +477,14 @@ namespace TracerLib {
     #region Test TraceLogFileWriter
     //      -----------------------
 
-    static string defaultDir = Environment.CurrentDirectory + @"\TestTraceLogFileWriter";
+    static readonly string defaultDir = Environment.CurrentDirectory + @"\TestTraceLogFileWriter";
     const string defaultFile = "TestTrace";
     const string defaultExtension = "txt";
     const long defaultSize = 1000000L;
     const int defaultCount = 3;
 
 
-    static void testTraceLogFileWriter() {
+    public static void TestTraceLogFileWriter() {
       Console.WriteLine("Test TraceLogFile Writer");
       Console.WriteLine("Sets up " + defaultFile + "." + defaultExtension + " file in the " + defaultDir + ", then writes each type of trace message and " +
         "checks the file if it has the proper content.");
@@ -491,47 +494,43 @@ namespace TracerLib {
       Tracer.IsBreakOnError = false;
       Tracer.IsBreakOnException = false;
 
-      using (TraceLogFileWriter traceLogFileWriter = assertCreation(defaultDir, defaultFile, defaultExtension, defaultSize, defaultCount)) {
+      using TraceLogFileWriter traceLogFileWriter = assertCreation(defaultDir, defaultFile, defaultExtension, defaultSize, defaultCount);
+      List<string> expectedContent = new List<string>();
+      assertContent(traceLogFileWriter.FileParameter, expectedContent, 1);
 
-        List<string> expectedContent = new List<string>();
-        assertContent(traceLogFileWriter.FileParameter, expectedContent, 1);
+      string testString = "first line: Trace";
+      Console.WriteLine(testString);
+      Tracer.Trace(testString);
+      expectedContent.Add(testString);
+      assertContent(traceLogFileWriter.FileParameter, expectedContent, 1);
 
-        string testString = "first line: Trace";
-        Console.WriteLine(testString);
-        Tracer.Trace(testString);
-        expectedContent.Add(testString);
-        assertContent(traceLogFileWriter.FileParameter, expectedContent, 1);
+      testString = "second line: warning";
+      Console.WriteLine(testString);
+      Tracer.TraceWarning(testString);
+      expectedContent.Add(testString);
+      assertContent(traceLogFileWriter.FileParameter, expectedContent, 1);
 
-        testString = "second line: warning";
-        Console.WriteLine(testString);
-        Tracer.TraceWarning(testString);
-        expectedContent.Add(testString);
-        assertContent(traceLogFileWriter.FileParameter, expectedContent, 1);
+      testString = "third line: error";
+      Console.WriteLine(testString);
+      Tracer.TraceError(testString);
+      expectedContent.Add(testString);
+      assertContent(traceLogFileWriter.FileParameter, expectedContent, 1);
 
-        testString = "third line: error";
-        Console.WriteLine(testString);
-        Tracer.TraceError(testString);
-        expectedContent.Add(testString);
-        assertContent(traceLogFileWriter.FileParameter, expectedContent, 1);
+      testString = "fourth line: exception";
+      Exception traceException = new Exception("Unit test for trace file writer");
+      Console.WriteLine(testString);
+      Tracer.TraceException(traceException, testString);
+      expectedContent.Add(testString);
+      assertContent(traceLogFileWriter.FileParameter, expectedContent, 1);
 
-        testString = "fourth line: exception";
-        Exception traceException = new Exception("Unit test for trace file writer");
-        Console.WriteLine(testString);
-        Tracer.TraceException(traceException, testString);
-        expectedContent.Add(testString);
-        assertContent(traceLogFileWriter.FileParameter, expectedContent, 1);
-
-        //display trace file content
-        Console.WriteLine();
-        Console.WriteLine("Show " + traceLogFileWriter.FullName);
-        Console.WriteLine();
-        using (FileStream stringTraceReaderFileStream = new FileStream(traceLogFileWriter.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-          using (StreamReader stringTraceReader = new StreamReader(stringTraceReaderFileStream)) {
-            while (!stringTraceReader.EndOfStream) {
-              Console.WriteLine(stringTraceReader.ReadLine());
-            }
-          }
-        }
+      //display trace file content
+      Console.WriteLine();
+      Console.WriteLine("Show " + traceLogFileWriter.FullName);
+      Console.WriteLine();
+      using FileStream stringTraceReaderFileStream = new FileStream(traceLogFileWriter.FullName!, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+      using StreamReader stringTraceReader = new StreamReader(stringTraceReaderFileStream);
+      while (!stringTraceReader.EndOfStream) {
+        Console.WriteLine(stringTraceReader.ReadLine());
       }
     }
 
@@ -553,18 +552,18 @@ namespace TracerLib {
           logFileWriterTimerInitialDelay: 10, //msec 
           logFileWriterTimerInterval: 1000); //msec
 
-      assertAreEqual(traceLogFileWriter.FileParameter.DirectoryPath, directoryPath);
-      assertAreEqual(traceLogFileWriter.FileParameter.FileName, fileName);
-      assertAreEqual(traceLogFileWriter.FileParameter.FileExtension, "txt");
-      assertAreEqual(traceLogFileWriter.FileParameter.MaxFileByteCount, newMaxFileByteCount);
-      assertAreEqual(traceLogFileWriter.FileParameter.MaxFileCount, newMaxFileCount);
+      assertAreEqual(traceLogFileWriter.FileParameter!.Value.DirectoryPath, directoryPath);
+      assertAreEqual(traceLogFileWriter.FileParameter!.Value.FileName, fileName);
+      assertAreEqual(traceLogFileWriter.FileParameter!.Value.FileExtension, "txt");
+      assertAreEqual(traceLogFileWriter.FileParameter!.Value.MaxFileByteCount, newMaxFileByteCount);
+      assertAreEqual(traceLogFileWriter.FileParameter!.Value.MaxFileCount, newMaxFileCount);
 
       return traceLogFileWriter;
     }
 
 
     private static void assertContent(
-      FileParameterStruct fileParameter, 
+      FileParameterStruct? fileParameter, 
       List<string> expectedContent, 
       int expectedFileCount,
       bool isDelayed = true) 
@@ -573,44 +572,42 @@ namespace TracerLib {
         Thread.Sleep(2000);
       }
 
-      if (!Directory.Exists(fileParameter.DirectoryPath))
+      var fileParameterValue = fileParameter!.Value;
+      if (!Directory.Exists(fileParameterValue.DirectoryPath))
         throw new Exception();
 
-      var expectedPathFileName = fileParameter.DirectoryPath + @"\" + fileParameter.FileName +
-        expectedFileCount + "." + fileParameter.FileExtension;
+      var expectedPathFileName = fileParameterValue.DirectoryPath + @"\" + fileParameterValue.FileName +
+        expectedFileCount + "." + fileParameterValue.FileExtension;
       if (!File.Exists(expectedPathFileName))
         throw new Exception();
 
-      using (FileStream stringTraceReaderFileStream = new FileStream(expectedPathFileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-        using (StreamReader stringTraceReader = new StreamReader(stringTraceReaderFileStream)) {
-          int lineCounter = 0;
-          while (!stringTraceReader.EndOfStream) {
-            string actualLineString = stringTraceReader.ReadLine();
-            if (lineCounter>1 && lineCounter<expectedContent.Count+2) {
-              //skip first 2 lines (header)
-              assertAreEqual(actualLineString.Substring(17), expectedContent[lineCounter-2]);
-            }
-            lineCounter++;
-          }
-          if (expectedContent.Count<4 && lineCounter!=expectedContent.Count+2) throw new Exception();
-          
+      using FileStream stringTraceReaderFileStream = new FileStream(expectedPathFileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+      using StreamReader stringTraceReader = new StreamReader(stringTraceReaderFileStream);
+      int lineCounter = 0;
+      while (!stringTraceReader.EndOfStream) {
+        string actualLineString = stringTraceReader.ReadLine()!;
+        if (lineCounter>1 && lineCounter<expectedContent.Count+2) {
+          //skip first 2 lines (header)
+          assertAreEqual(actualLineString.Substring(17), expectedContent[lineCounter-2]);
         }
+        lineCounter++;
       }
+      if (expectedContent.Count<4 && lineCounter!=expectedContent.Count+2) throw new Exception();
     }
 
 
-    private static void assertDirectory(LogFileWriter logFileWriter, int[] fileNumbers) {
-      List<int> fileNumberList = new List<int>(fileNumbers);
-      string[] filesFound = Directory.GetFiles(logFileWriter.FileParameter.DirectoryPath);
-      int startPos = logFileWriter.FileParameter.DirectoryPath.Length + 1 + logFileWriter.FileParameter.FileName.Length;
-      int extensionLength = logFileWriter.FileParameter.FileExtension.Length + 1;
-      foreach (string fileFound in filesFound) {
-        int fileNumber = int.Parse(fileFound.Substring(startPos, fileFound.Length-startPos-extensionLength));
-        if (!fileNumberList.Remove(fileNumber))
-          throw new Exception();
-      }
-      assertAreEqual(fileNumberList.Count, 0);
-    }
+    //private static void assertDirectory(LogFileWriter logFileWriter, int[] fileNumbers) {
+    //  List<int> fileNumberList = new List<int>(fileNumbers);
+    //  string[] filesFound = Directory.GetFiles(logFileWriter.FileParameter.DirectoryPath);
+    //  int startPos = logFileWriter.FileParameter.DirectoryPath.Length + 1 + logFileWriter.FileParameter.FileName.Length;
+    //  int extensionLength = logFileWriter.FileParameter.FileExtension.Length + 1;
+    //  foreach (string fileFound in filesFound) {
+    //    int fileNumber = int.Parse(fileFound.Substring(startPos, fileFound.Length-startPos-extensionLength));
+    //    if (!fileNumberList.Remove(fileNumber))
+    //      throw new Exception();
+    //  }
+    //  assertAreEqual(fileNumberList.Count, 0);
+    //}
 
 
     private static void assertAreEqual(int int1, int int2) {
@@ -651,7 +648,7 @@ namespace TracerLib {
     static double emptyTimeMs;
 
 
-    private static void tracerTiming() {
+    public static void TracerTiming() {
       Console.WriteLine("Test Tracer Timing");
       Console.WriteLine();
 
@@ -694,8 +691,9 @@ namespace TracerLib {
       timeResults = new double[threadCount];
       Thread[] threads = new Thread[threadCount];
       for (int threadIndex = 0; threadIndex < threadCount; threadIndex++) {
-        Thread thread = new Thread(tracerThreadMethod);
-        thread.Name = "Tracer" + threadIndex;
+        Thread thread = new Thread(tracerThreadMethod) {
+          Name = "Tracer" + threadIndex
+        };
         thread.Start(threadIndex);
         threads[threadIndex] = thread;
       }
@@ -716,8 +714,9 @@ namespace TracerLib {
       timeResults = new double[threadCount];
       threads = new Thread[threadCount];
       for (int threadIndex = 0; threadIndex < threadCount; threadIndex++) {
-        Thread thread = new Thread(vsThreadMethod);
-        thread.Name = "Tracer" + threadIndex;
+        Thread thread = new Thread(vsThreadMethod) {
+          Name = "Tracer" + threadIndex
+        };
         thread.Start(threadIndex);
         threads[threadIndex] = thread;
       }
@@ -754,11 +753,11 @@ namespace TracerLib {
     const int threadCount = 4;
     static int threadRunningCount = 0;
     static int threadStoppedCount = 0;
-    static double[] timeResults;
+    static double[]? timeResults;
 
 
-    private static void tracerThreadMethod(object threadNoObject) {
-      int threadNo = (int)threadNoObject;
+    private static void tracerThreadMethod(object? threadNoObject) {
+      int threadNo = (int)threadNoObject!;
       string threadNoString = threadNo.ToString();
       Interlocked.Increment(ref threadRunningCount);
       do {
@@ -772,13 +771,13 @@ namespace TracerLib {
         Tracer.Trace(threadNoString + "." + loopIndex);
       }
       stopwatch.Stop();
-      timeResults[threadNo] = (double)stopwatch.ElapsedTicks/maxLoops/Stopwatch.Frequency * 1000.0 - emptyTimeMs;
+      timeResults![threadNo] = (double)stopwatch.ElapsedTicks/maxLoops/Stopwatch.Frequency * 1000.0 - emptyTimeMs;
       Interlocked.Increment(ref threadStoppedCount);
     }
 
 
-    private static void vsThreadMethod(object threadNoObject) {
-      int threadNo = (int)threadNoObject;
+    private static void vsThreadMethod(object? threadNoObject) {
+      int threadNo = (int)threadNoObject!;
       string threadNoString = threadNo.ToString();
       Interlocked.Increment(ref threadRunningCount);
       do {
@@ -792,7 +791,7 @@ namespace TracerLib {
         System.Diagnostics.Trace.WriteLine(threadNoString + "." + loopIndex);
       }
       stopwatch.Stop();
-      timeResults[threadNo] = (double)stopwatch.ElapsedTicks/maxLoops/Stopwatch.Frequency * 1000.0 - emptyTimeMs;
+      timeResults![threadNo] = (double)stopwatch.ElapsedTicks/maxLoops/Stopwatch.Frequency * 1000.0 - emptyTimeMs;
       Interlocked.Increment(ref threadStoppedCount);
     }
     #endregion
@@ -801,10 +800,10 @@ namespace TracerLib {
     #region Test TraceLogFileWriter Dispose
     //      -------------------------------
 
-    static void testTraceLogFileWriterDispose() {
+    public static void TestTraceLogFileWriterDispose() {
       Console.WriteLine("Test TraceLogFile Writer Dispose");
       Console.WriteLine("Sets up " + defaultFile + "." + defaultExtension + " file in the " + defaultDir + ", then traces one " +
-        "line and disposes the writer. The following test checks immwdiately if the line is written to the file.");
+        "line and disposes the writer. The following test checks immediately if the line is written to the file.");
       Console.WriteLine();
       deleteTestFolder(defaultDir);
 
@@ -819,7 +818,7 @@ namespace TracerLib {
         logFileWriterTimerInitialDelay: 1000, //msec 
         logFileWriterTimerInterval: 10 * 1000)) 
       {
-        fileParameter = traceLogFileWriter.FileParameter;
+        fileParameter = traceLogFileWriter.FileParameter!.Value;
         Tracer.Trace("Single line tracing");
         expectedStrings.Add("Single line tracing");
       }
@@ -834,10 +833,10 @@ namespace TracerLib {
     #region Test TraceLogFileWriter Destruct
     //      --------------------------------
 
-    static void testTraceLogFileWriterDestruct() {
+    public static void TestTraceLogFileWriterDestruct() {
       Console.WriteLine("Test TraceLogFile Writer Destruct");
       Console.WriteLine("Sets up " + defaultFile + "." + defaultExtension + " file in the " + defaultDir + ", then traces one " +
-        "line and ends the programm. The user needs to check manually, once the test has finished, if the file is written properly.");
+        "line and ends the program. The user needs to check manually, once the test has finished, if the file is written properly.");
       Console.WriteLine();
       Console.WriteLine("Verify that 'Single line tracing for destructor' is written in the file.");
       Console.WriteLine("Copy first the file location, because the program will terminate immediately.");
@@ -847,8 +846,7 @@ namespace TracerLib {
 
       deleteTestFolder(defaultDir);
 
-      FileParameterStruct fileParameter;
-      var traceLogFileWriter = new TraceLogFileWriter(
+      new TraceLogFileWriter(
         directoryPath: defaultDir,
         fileName: defaultFile,
         fileExtension: defaultExtension,
@@ -856,7 +854,6 @@ namespace TracerLib {
         maxFileCount: 5,
         logFileWriterTimerInitialDelay: 1000, //msec 
         logFileWriterTimerInterval: 10 * 1000);
-      fileParameter = traceLogFileWriter.FileParameter;
       Tracer.Trace("Single line tracing for destructor");
       //destructor should write the trace line above to the log file
     }

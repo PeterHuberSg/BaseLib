@@ -66,12 +66,12 @@ namespace ACoreLib {
     
 
     //message buffer
-    static string[] messages = new string[MaxMessages];
-    static string[] threadNames = new string[MaxMessages];
-    static long[] ticks = new long[MaxMessages];
+    static readonly string[] messages = new string[MaxMessages];
+    static readonly string?[] threadNames = new string?[MaxMessages];
+    static readonly long[] ticks = new long[MaxMessages];
     static int messagesIndex = -1; //the counter gets incremented before its use
 
-    static Stopwatch stopWatch;
+    static readonly Stopwatch stopWatch;
 
 
     static RealTimeTracer() {
@@ -98,7 +98,7 @@ namespace ACoreLib {
 
 
     /// <summary>
-    /// Returns all message traced so far, the lastet first. Tracing of new messages is stopped
+    /// Returns all message traced so far, the latest first. Tracing of new messages is stopped
     /// while creating the return string.
     /// </summary>
     public static string GetTrace() {
@@ -126,7 +126,7 @@ namespace ACoreLib {
 
   
     /// <summary>
-    /// Returns all message traced so far, the lastet first. Tracing of new messages is stopped
+    /// Returns all message traced so far, the lasted first. Tracing of new messages is stopped
     /// while creating the return string.
     /// </summary>
     public static string GetTraceOldesFirst() {
@@ -138,7 +138,7 @@ namespace ACoreLib {
       int indexCount;
       if (ticks[MaxMessages-1]==0) {
         //buffer was not filled. Start at beginning of buffer. Don't use messagesIndex<MaxMessages to test if
-        //bufer is not full yet, because messagesIndex will become 0 again and again.
+        //buffer is not full yet, because messagesIndex will become 0 again and again.
         readIndex = 0;
         indexCount = messagesIndex;
         

@@ -1,5 +1,5 @@
 ﻿/***************************************************************************************************************************
-Copyright: Juerg Peter Huber, Horgen, 2016
+Copyright: Juerg Peter Huber, Horgen, 2016-2020
 This code is contributed to the Public Domain. It may be freely used by anyone for any purpose, commercial or non-commercial. 
 The software is provided "as-is." The author gives no warranty of any kind that the code is free of defects, merchantable, 
 fit for a particular purpose or non-infringing. Use this code only if you agree with this conditions. The entire risk of 
@@ -7,17 +7,16 @@ using it is with you :-)
 ***************************************************************************************************************************/
 
 using System;
-using System.Data.SqlClient;
 using System.Reflection;
 using System.Text;
 
 
 namespace ACoreLib {
 
-  /// <summary>
-  /// Class for extension mehods of Exception
-  /// </summary>
-  public static class ExceptionExtension {
+	/// <summary>
+	/// Holds extension method to display details of an exception
+	/// </summary>
+	public static class ExceptionExtension {
 
     #region Methods
     //      -------
@@ -32,7 +31,7 @@ namespace ACoreLib {
 			int titelLength; 
 			
 			// Loop through all exceptions
-			Exception currentException = thisException;	// Temp variable to hold InnerException object during the loop.
+			Exception? currentException = thisException;	// Temp variable to hold InnerException object during the loop.
 			int exceptionCount = 1;				// Count variable to track the number of exceptions in the chain.
 			do {
 				// exception type and message as title

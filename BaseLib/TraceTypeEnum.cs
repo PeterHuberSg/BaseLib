@@ -20,18 +20,13 @@ namespace ACoreLib {
 
   public static class TraceTypeEnumExtension {
     public static string ShortString(this TraceTypeEnum tracerSource) {
-      switch (tracerSource) {
-      case TraceTypeEnum.Trace:
-        return "Trc";
-      case TraceTypeEnum.Warning:
-        return "War";
-      case TraceTypeEnum.Error:
-        return "Err";
-      case TraceTypeEnum.Exception:
-        return "Exc";
-      default:
-        return tracerSource.ToString();
-      }
+      return tracerSource switch{
+        TraceTypeEnum.Trace => "Trc",
+        TraceTypeEnum.Warning => "War",
+        TraceTypeEnum.Error => "Err",
+        TraceTypeEnum.Exception => "Exc",
+        _ => tracerSource.ToString(),
+      };
     }
   }
 

@@ -20,12 +20,12 @@ namespace ACoreLib {
     public readonly TraceTypeEnum TraceType;
     public readonly DateTime Created;
     public readonly string Message;
-    public readonly string FilterText;
+    public readonly string? FilterText;
 
-    private string asString;
+    private string? asString;
 
 
-    public TraceMessage(TraceTypeEnum tracrType, string message, string filterText = null) {
+    public TraceMessage(TraceTypeEnum tracrType, string message, string? filterText = null) {
       TraceType = tracrType;
       Created = DateTime.Now;
       Message = message;

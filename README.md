@@ -12,7 +12,8 @@ after some time. But when an exception or error occurs, the trace information ca
 what happened before(!) the problem occurred. Tracer runs efficiently with very little overhead.
 Detail documentation: <https://www.codeproject.com/Articles/1142178/ACoreLib-Tracer-Tracing-Done-Right>
 
-BaseLib also contains some Buffers (Ring and FiFo).
+BaseLib also contains some very fast, non blocking, dual threading safe Buffers (Ring and FiFo). Dual
+threading means that one threat can write and another thread can read without blocking each other. 
 
 **Copyright:** Pubic Domain
 

@@ -8,6 +8,7 @@ using it is with you :-)
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 
@@ -46,7 +47,7 @@ namespace ACoreLib {
     /// <summary>
     /// Get the full path and name of the current file
     /// </summary>
-    public string FullName {
+    public string? FullName {
       get {
         lock (logFileWriterTimerLock) {
           if (fileSizeManager==null) return null;
@@ -78,13 +79,13 @@ namespace ACoreLib {
     /// <summary>
     /// Func is called when LogFileWriter opens a new file
     /// </summary>
-    Func<string> getNewFileHeader;
+    readonly Func<string>? getNewFileHeader;
 
 
     /// <summary>
     /// Func is called when the date changes to a new date
     /// </summary>
-    Func<string> getNewDayHeader;
+    readonly Func<string>? getNewDayHeader;
     #endregion
 
 
@@ -94,6 +95,9 @@ namespace ACoreLib {
     bool isNewFileParameter;
     FileParameterStruct newFileParameter;
     const int maxMessageQueueSizeDefault = 10000;
+    FileSizeManager fileSizeManager;
+    readonly int logFileWriterTimerInitialDelay;
+    readonly int logFileWriterTimerInterval;
 
 
     /// <summary>
@@ -101,8 +105,8 @@ namespace ACoreLib {
     /// </summary>
     public LogFileWriter(
       FileParameterStruct fileParameter, 
-      Func<string> getNewFileHeader = null, 
-      Func<string> getNewDayHeader = null,
+      Func<string>? getNewFileHeader = null, 
+      Func<string>? getNewDayHeader = null,
       int maxMessageQueueSize = maxMessageQueueSizeDefault,
       int logFileWriterTimerInitialDelay = 10, 
       int logFileWriterTimerInterval = 10000)
@@ -110,7 +114,11 @@ namespace ACoreLib {
       this.getNewFileHeader = getNewFileHeader;
       this.getNewDayHeader = getNewDayHeader;
       this.maxMessageQueueSize = maxMessageQueueSize;
-      initialiseLogFileWriterTimer(fileParameter, logFileWriterTimerInitialDelay, logFileWriterTimerInterval);
+      fileSizeManager = new FileSizeManager(fileParameter);
+      this.logFileWriterTimerInitialDelay = logFileWriterTimerInitialDelay;
+      this.logFileWriterTimerInterval = logFileWriterTimerInterval;
+
+      initialiseLogFileWriterTimer();
     }
 
 
@@ -130,10 +138,9 @@ namespace ACoreLib {
     /// Supports the changing of file name, size, etc.
     /// </summary>
     public void ChangeFileProperties(FileParameterStruct newFileParameter) {
-      string problem = null;
-      if (!newFileParameter.ValidateConstructorParameters(false, out problem)) {
-        throw new Exception("LogFileWriter.ChangeProperties(): Invalide parameters '" + newFileParameter.ToString() + "'." +  
-        (problem==null ? "" : " The following problem occured: " + Environment.NewLine + problem));
+      if (!newFileParameter.ValidateConstructorParameters(false, out var problem)) {
+        throw new Exception("LogFileWriter.ChangeProperties(): Invalid parameters '" + newFileParameter.ToString() + 
+          "'. The following problem occurred: " + Environment.NewLine + problem);
       }
       this.newFileParameter = newFileParameter;
       isNewFileParameter = true;
@@ -179,8 +186,8 @@ namespace ACoreLib {
     #region Message Queue
     //      ------------
 
-    Queue<String> messageQueue = new Queue<string>(); //could use a StringBuffer, but Queue is probably faster, because no bloking of memory over possibly long time for huge strings
-    int maxMessageQueueSize = maxMessageQueueSizeDefault;
+    readonly Queue<String> messageQueue = new Queue<string>(); //could use a StringBuffer, but Queue is probably faster, because no blocking of memory over possibly long time for huge strings
+    readonly int maxMessageQueueSize = maxMessageQueueSizeDefault;
     int removedMessages = 0;
 
 
@@ -195,7 +202,7 @@ namespace ACoreLib {
     }
 
 
-    bool messageQueueRemove(out string message) {
+    bool messageQueueRemove([NotNullWhen(true)]out string? message) {
       lock (messageQueue) {
         if (messageQueue.Count<=0) {
           message = null;
@@ -222,19 +229,12 @@ namespace ACoreLib {
     //+ Many messages are written together
     //+ Preventing multi threading problems, since only the timer thread writes to the file
 
-    System.Threading.Timer logFileWriterTimer;
-    object logFileWriterTimerLock = new object();
-    int logFileWriterTimerInitialDelay;
-    int logFileWriterTimerInterval;
+    System.Threading.Timer? logFileWriterTimer;
+    readonly object logFileWriterTimerLock = new object();
     bool isLogFileWriterTimerStopped;
-    FileSizeManager fileSizeManager;
 
 
-    private void initialiseLogFileWriterTimer(FileParameterStruct fileParameter, int logFileWriterTimerInitialDelay, int logFileWriterTimerInterval) {
-      fileSizeManager = new FileSizeManager(fileParameter);
-
-      this.logFileWriterTimerInitialDelay = logFileWriterTimerInitialDelay;
-      this.logFileWriterTimerInterval = logFileWriterTimerInterval;
+    private void initialiseLogFileWriterTimer() {
       if (logFileWriterTimer!=null) {
         throw new Exception("Do not create 2 log file timers.");
       }
@@ -243,13 +243,13 @@ namespace ACoreLib {
     }
 
 
-    void logFileWriterTimer_Elapsed(object state) {
+    void logFileWriterTimer_Elapsed(object? state) {
       lock (logFileWriterTimerLock) {
         if (isLogFileWriterTimerStopped) return;
 
         try {
           //make sure that timer is stopped until writing is finished
-          logFileWriterTimer.Change(Timeout.Infinite, Timeout.Infinite);
+          logFileWriterTimer!.Change(Timeout.Infinite, Timeout.Infinite);
 
           //parameters changed ?
           if (isNewFileParameter) {
@@ -262,7 +262,7 @@ namespace ACoreLib {
           Tracer.ShowExceptionInDebugger(ex);
         } finally {
           //ensure that next timer fires again
-          logFileWriterTimer.Change(logFileWriterTimerInterval, Timeout.Infinite);
+          logFileWriterTimer!.Change(logFileWriterTimerInterval, Timeout.Infinite);
         }
       }
     }
@@ -291,7 +291,7 @@ namespace ACoreLib {
 
 
     private void writeQueueToFile() {
-      FileStream fileStream = null;
+      FileStream? fileStream = null;
       try {
         //anything to write ?
         bool isMessageAvialable;
@@ -307,8 +307,7 @@ namespace ACoreLib {
           }
 
           //write messages
-          string message;
-          while (messageQueueRemove(out message)) {
+          while (messageQueueRemove(out var message)) {
             writeMessage(ref fileStream, message);
           }
         }

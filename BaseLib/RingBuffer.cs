@@ -13,12 +13,11 @@ namespace ACoreLib {
 
 
   /// <summary>
-  /// Ringbuffer stores the last x items added to it, the rest gets overwritten.
+  /// RingBuffer stores the last x items added to it, the rest gets overwritten.
   /// </summary>
   public class RingBuffer<T> {
-
-    int size;
-    T[] buffer;
+    readonly int size;
+    readonly T[] buffer;
     int writePointer;
     bool isOverflow;
 
@@ -33,7 +32,7 @@ namespace ACoreLib {
 
     public void Clear() {
       for (int bufferIndex = 0; bufferIndex < buffer.Length; bufferIndex++) {
-        buffer[bufferIndex] = default;
+        buffer[bufferIndex] = default!;
       }
       writePointer = 0;
       isOverflow = false;
@@ -59,7 +58,7 @@ namespace ACoreLib {
       do {
         T item = buffer[readPointer--];
         if (!EqualityComparer<T>.Default.Equals(item, default)) { //item!=default(T) will not compile
-          stringBuilder.AppendLine(item.ToString());
+          stringBuilder.AppendLine(item!.ToString());
         }
         if (readPointer<0) {
           if (isOverflow) {

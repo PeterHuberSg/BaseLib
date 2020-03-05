@@ -22,7 +22,7 @@ namespace RealTimeTracerTestConsole {
   /// from the test you want to run.
   /// </summary>
   class Program {
-    static void Main(string[] args) {
+    public static void Main(string[] _/*args*/) {
       Console.WriteLine("RealTime Tracer Test Console");
       Console.WriteLine("============================");
       Console.WriteLine();
@@ -32,13 +32,13 @@ namespace RealTimeTracerTestConsole {
       //run only 1 test at a time
 
       #region RealTimeTracer Tests
-      //testRealTimeTracerSingleThread();
-      testRealTimeTracerMultiThread(); //most important test
+      //TestRealTimeTracerSingleThread();
+      //TestRealTimeTracerMultiThread(); //most important test
       #endregion
 
       #region Increment Statement Tests, was used to test 'Interlocked.Increment(ref mainIndex) & indexMask'
-      //testIncrementSingleThread();
-      //testIncrementMultiThread();
+      //TestIncrementSingleThread();
+      //TestIncrementMultiThread();
       #endregion
 
       Console.WriteLine("Press Enter to stop program");
@@ -57,7 +57,7 @@ namespace RealTimeTracerTestConsole {
     /// Running it on a single thread proves that the writing and testing code works correctly, which is important
     /// when running the multi threaded test.
     /// </summary>
-    private static void testRealTimeTracerSingleThread() {
+    public static void TestRealTimeTracerSingleThread() {
       Console.WriteLine("Test RealTimeTracer on SingleThread:");
       Console.WriteLine("Test using only 1 thread, filling first the RealTimeTracer writing " + RealTimeTracer.MaxMessages + " times");
       Console.WriteLine("an incremented number, then checking if RealTimeTracer is filled with the");
@@ -65,7 +65,6 @@ namespace RealTimeTracerTestConsole {
       Console.WriteLine();
 
       Thread.CurrentThread.Name = "MainThread";
-      string[] testResults = new string[maxTestCycles];
       for (int testIndex = 0; testIndex < maxTestCycles; testIndex++) {
         Stopwatch stopWatch = new Stopwatch();
         stopWatch.Start();
@@ -104,16 +103,16 @@ namespace RealTimeTracerTestConsole {
 
 
     /// <summary>
-    /// Test with many writer threads. Each thread writes continously an incremented number and its thread number into the trace. 
+    /// Test with many writer threads. Each thread writes continuously an incremented number and its thread number into the trace. 
     /// After x seconds the writer threads get stopped and then tested if in the trace every thread wrote properly
     /// incremented numbers.
     /// </summary>
-    private static void testRealTimeTracerMultiThread() {
+    public static void TestRealTimeTracerMultiThread() {
       TimeSpan waitTime = new TimeSpan(0, 0, 5);
       //TimeSpan waitTime = new TimeSpan(0, 0, 50);
 
       Console.WriteLine("Test RealTimeTracer using " + maxTest2Threads + " writer threads:");
-      Console.WriteLine("Each thread writes continously an incremented number and its thread number");
+      Console.WriteLine("Each thread writes continuously an incremented number and its thread number");
       Console.WriteLine("into the trace. After " + waitTime.Seconds + " seconds the writer threads get stopped and then");
       Console.WriteLine("tested if in the trace every thread wrote properly incremented numbers.");
       Console.WriteLine();
@@ -125,8 +124,9 @@ namespace RealTimeTracerTestConsole {
       Thread[] testThreads = new Thread[maxTest2Threads];
       doTesting = true;
       for (int testThreadIndex = 0; testThreadIndex < maxTest2Threads; testThreadIndex++) {
-        Thread testThread = new Thread(test2ThreadBody);
-        testThread.Name = "TestThread " + testThreadIndex;
+        Thread testThread = new Thread(test2ThreadBody) {
+          Name = "TestThread " + testThreadIndex
+        };
         testThreads[testThreadIndex] = testThread;
         testThread.Start(testThreadIndex);
       }
@@ -179,12 +179,12 @@ namespace RealTimeTracerTestConsole {
         treadTestCounter[threadNo] = testCounter;
 
       }
-      Console.WriteLine("verify successfull" + Environment.NewLine);
+      Console.WriteLine("verify successful" + Environment.NewLine);
     }
 
 
-    public static void test2ThreadBody(object threadNoObject) {
-      int threadNo = (int)threadNoObject;
+    private static void test2ThreadBody(object? threadNoObject) {
+      int threadNo = (int)threadNoObject!;
       int counter = 0;
       try {
         while (doTesting) {
@@ -205,10 +205,10 @@ namespace RealTimeTracerTestConsole {
     /// runs from int.Minimum to int.Maximum then continues again with int.Minimum, while the statement should return a running
     /// number between 0 and 0xFF (255), even if mainIndex is negative.
     /// </summary>
-    private static void testIncrementSingleThread() {
+    public static void TestIncrementSingleThread() {
       const int MaxMessages = 0x100;
       const int indexMask = MaxMessages-1;
-      int mainIndex = -1; //runs from int.Minimum to int.Maximum, it is initialised to -1 because itgets incremented before its use
+      int mainIndex = -1; //runs from int.Minimum to int.Maximum, it is initialised to -1 because it gets incremented before its use
       int expectedMainIndex = mainIndex + 1;
       int expectedSubIndex = expectedMainIndex;//runs from 0 to indexMask
       int loopMax = 10 * 1000*1000;
@@ -254,7 +254,7 @@ namespace RealTimeTracerTestConsole {
     const int maxThreadIndexIncrementTest = 0x200000;
 
     static int mainIndexIncrementTest = -1; //the counter gets incremented before its use
-    static int[][] threadIndexTraces;
+    static int[][]? threadIndexTraces;
 
 
     /// <summary>
@@ -262,7 +262,7 @@ namespace RealTimeTracerTestConsole {
     /// in an array. When every thread has filled its array, a test is run to verify that EVERY index is used exactly 
     /// by one thread.
     /// </summary>
-    private static void testIncrementMultiThread() {
+    public static void TestIncrementMultiThread() {
       const int maxTestThreads = 6;
 
       Console.WriteLine("Test increment statement with " + maxTestThreads + " threads:");
@@ -285,10 +285,11 @@ namespace RealTimeTracerTestConsole {
       int testcycle = 0;
       do {
         testcycle++;
-        Console.WriteLine("testcycle " + testcycle);
+        Console.WriteLine("test cycle " + testcycle);
         for (int testThreadIndex = 0; testThreadIndex < maxTestThreads; testThreadIndex++) {
-          Thread testThread = new Thread(testIncrementThreadBody);
-          testThread.Name = "TestThread " + testThreadIndex;
+          Thread testThread = new Thread(TestIncrementThreadBody) {
+            Name = "TestThread " + testThreadIndex
+          };
           testThreads[testThreadIndex] = testThread;
           threadIndexTraces[testThreadIndex] = new int[maxThreadIndexIncrementTest+1]; //last int will be never used, but easier for programming
         }
@@ -323,16 +324,18 @@ namespace RealTimeTracerTestConsole {
     }
 
 
-    public static void testIncrementThreadBody(object threadNoObject) {
-      int threadNo = (int)threadNoObject;
-      int[] indexes = threadIndexTraces[threadNo];
+    public static void TestIncrementThreadBody(object? threadNoObject) {
+      int threadNo = (int)threadNoObject!;
+      int[] indexes = threadIndexTraces![threadNo];
       int testThreadIndex = 0;
       try {
         for (int counter = 0; counter < maxThreadIndexIncrementTest; counter++) {
           indexes[testThreadIndex++] = Interlocked.Increment(ref mainIndexIncrementTest);
         }
       } catch (Exception ex) {
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
         String errorMessage = Thread.CurrentThread.Name + ex.Message;
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
         System.Diagnostics.Debugger.Break();
       }
     }

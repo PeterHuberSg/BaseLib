@@ -8,6 +8,7 @@ using it is with you :-)
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -75,13 +76,15 @@ namespace ACoreLib {
     #region Constructor
     //      -----------
 
-    private DataRecordType[] fifoBuffer; 
+    private readonly DataRecordType[] fifoBuffer; 
     private volatile int insertIndex = 0; //Index into fifoBuffer, where next dataRecord should be written
     private volatile int removeIndex = 0;//Index into fifoBuffer, where next dataRecord should be removed
 
 
     private FifoBuffer() {
+      throw new NotImplementedException();
     }
+
 
     /// <summary>
     /// Create FIFO buffer with max capacity
@@ -113,9 +116,9 @@ namespace ACoreLib {
 
 
     /// <summary>
-    /// Read and remove datarecord from buffer.
+    /// Read and remove dataRecord from buffer.
     /// </summary>
-    public bool Remove(out DataRecordType? dataRecord) {
+    public bool Remove([NotNullWhen(true)]out DataRecordType? dataRecord) {
       if (removeIndex==insertIndex) {
         //FIFO buffer is empty
         dataRecord = null;
@@ -136,7 +139,7 @@ namespace ACoreLib {
 
 
     /// <summary>
-    /// Remove datarecord from buffer. If FIFO buffer is empty, an Exception is thrown.
+    /// Remove dataRecord from buffer. If FIFO buffer is empty, an Exception is thrown.
     /// </summary>
     public void Remove() {
       if (removeIndex==insertIndex) {
@@ -158,18 +161,14 @@ namespace ACoreLib {
     /// </summary>
     public void RemoveAll() {
       //free all records
-      int tempRemoveIndex = removeIndex + 1;
-      if (tempRemoveIndex>=fifoBuffer.Length) {
-        tempRemoveIndex = 0;
-      }
       removeIndex = insertIndex;
     }
 
 
     /// <summary>
-    /// Read any datarecord from the FIFO buffer, but don't remove the datarecord. The position
+    /// Read any dataRecord from the FIFO buffer, but don't remove the dataRecord. The position
     /// is relative to the removeIndex
-    /// This method only works, if no other thread removes datarecords during the read.
+    /// This method only works, if no other thread removes dataRecords during the read.
     /// </summary>
     public bool ReadAt(int Position, out DataRecordType? dataRecord) {
       //assumption: the thread reading is also the only thread removing records. Therefore, 
@@ -193,10 +192,10 @@ namespace ACoreLib {
 
 
     /// <summary>
-    /// Read any datarecord from the FIFO buffer, but don't remove the datarecord. The position
-    /// is relative to the removeIndex. If position is greater than the available datarecords, an
+    /// Read any dataRecord from the FIFO buffer, but don't remove the dataRecord. The position
+    /// is relative to the removeIndex. If position is greater than the available dataRecords, an
     /// AsiaInfoLab.Lib Exception is thrown.
-    /// This method only works, if no other thread removes datarecords during the read.
+    /// This method only works, if no other thread removes dataRecords during the read.
     /// </summary>
     public DataRecordType ReadAt(int Position) {
       //assumption: the thread reading is also the only thread removing records. Therefore, 
@@ -218,9 +217,8 @@ namespace ACoreLib {
 
 
     /// <summary>
-    /// provides some informtaion about fifo buffer state
+    /// provides some information about FIFO buffer state
     /// </summary>
-    /// <returns></returns>
     public override string ToString() {
       string insertString;
       string removeString;
@@ -228,10 +226,10 @@ namespace ACoreLib {
         insertString = "empty";
         removeString = "empty";
       } else {
-        insertString = fifoBuffer[insertIndex].ToString();
-        removeString = fifoBuffer[removeIndex].ToString();
+        insertString = fifoBuffer[insertIndex].ToString()!;
+        removeString = fifoBuffer[removeIndex].ToString()!;
       }
-      return string.Format("Capacity: {0}, Count: {5}; InsertIndex: {1}; Inserted Record: {2}; RemoveIndex: {3}; Removeable Record: {4};",
+      return string.Format("Capacity: {0}, Count: {5}; InsertIndex: {1}; Inserted Record: {2}; RemoveIndex: {3}; Removable Record: {4};",
         fifoBuffer.Length, insertIndex, insertString, removeIndex, removeString, Count);
     }
     #endregion

@@ -22,7 +22,7 @@ Warning()->|->messageQueue->|->|->messageBuffer->|->GetTrace()
 Error()--->|        v                            |->Flush()
 Exception->|        +----->Pulse tracerThread
 
-tracerThread is a background thread, meaning the application can stop without explicitely stopping tracerThread. To shut down 
+tracerThread is a background thread, meaning the application can stop without explicitly stopping tracerThread. To shut down 
 nicely, Flush(true) can be used, which processes first all pending messages and then calls StopTracing().
 */
 
@@ -88,7 +88,7 @@ namespace ACoreLib {
 
     /// <summary>
     /// The number of trace messages Tracer stores in messageQueue before reporting an overflow. messageQueue is an internal buffer and 
-    /// gets continously emptied.
+    /// gets continuously emptied.
     /// </summary>
     public const int MaxMessageQueue = MaxMessageBuffer/3;
 
@@ -107,7 +107,7 @@ namespace ACoreLib {
 
     /// <summary>
     /// Stop in the debugger if one is attached and the trace is an exception. In unit tests including the proper throwing of
-    /// exceptions, it's usefull to setIsBreakOnException IsBreakOnException as false.
+    /// exceptions, it's useful to setIsBreakOnException IsBreakOnException as false.
     /// </summary>
     public static bool IsBreakOnException = true;
     #endregion
@@ -195,7 +195,7 @@ namespace ACoreLib {
     public static TraceMessage[] GetTrace(bool needsFlushing = true) {
       if (needsFlushing) Flush(); //get also the messages in the temporary message buffer. This is important if trace is used during exception handling
 
-      //some messages might get losed between Flush and lock (messageBuffer), but that should be ok, because
+      //some messages might get lost between Flush and lock (messageBuffer), but that should be ok, because
       //GetTrace() will be called after tracing is done
       lock (messageBuffer) {
         return messageBuffer.ToArray();
@@ -218,7 +218,7 @@ namespace ACoreLib {
 
     /// <summary>
     /// Removes a listener to MessagesTraced event. If needsFlushing, all messages from temporary storage gets processed first. This
-    /// is usefull to ensure that all messages are processed before the listener is removed.
+    /// is useful to ensure that all messages are processed before the listener is removed.
     /// </summary>
     public static void RemoveMessagesTracedListener(Action<TraceMessage[]> MessagesTracedHandler, bool needsFlushing = true) {
       if (needsFlushing) Flush(false);
@@ -230,7 +230,7 @@ namespace ACoreLib {
     /// <summary>
     /// Event gets raised when a message get traced.
     /// </summary>
-    public static event Action<TraceMessage[]> MessagesTraced;
+    public static event Action<TraceMessage[]>? MessagesTraced;
 
 
     #endregion
@@ -239,7 +239,7 @@ namespace ACoreLib {
     #region Message handling per thread
     //      ---------------------------
 
-    private static void tracePerThread(TraceTypeEnum traceType, string filterText, string message, params object[] args) {
+    private static void tracePerThread(TraceTypeEnum traceType, string? filterText, string message, params object[] args) {
       //concatenate message
       if (args!=null && args.Length>0) {
         try {
@@ -255,14 +255,14 @@ namespace ACoreLib {
     #endregion
 
 
-    #region Multithreaded Queue
-    //      -------------------
+    #region Multi-threaded Queue
+    //      --------------------
 
-    static Queue<TraceMessage> messagesQueue = new Queue<TraceMessage>(MaxMessageQueue);
+    static readonly Queue<TraceMessage> messagesQueue = new Queue<TraceMessage>(MaxMessageQueue);
     static bool isMessagesQueueOverflow;
 
 
-    private static void enqueueMessage(TraceTypeEnum traceType, string filterText, string message) {
+    private static void enqueueMessage(TraceTypeEnum traceType, string? filterText, string message) {
 #if RealTimeTraceing
         RealTimeTracer.Trace("enqueueMessage(): start " + traceType.ShortString() + ": " + threadMessageBuffer);
 #endif
@@ -317,11 +317,11 @@ namespace ACoreLib {
     //      -----------------
 
     //storage of all messages. Other threads can get a copy with GetTrace()
-    static Queue<TraceMessage> messageBuffer = new Queue<TraceMessage>(MaxMessageBuffer);
+    static readonly Queue<TraceMessage> messageBuffer = new Queue<TraceMessage>(MaxMessageBuffer);
 
 
     static int isDoTracing = 0;
-    static Timer tracerTimer = createTracerTimer();
+    static readonly Timer tracerTimer = createTracerTimer();
 
 
     private static Timer createTracerTimer() {
@@ -335,7 +335,7 @@ namespace ACoreLib {
     static int isTracerTimerMethodRunning = 0;
 
 
-    private static void tracerTimerMethod(object state) {
+    private static void tracerTimerMethod(object? state) {
       try { //thread needs to catch its exceptions
 #if RealTimeTraceing
           RealTimeTracer.Trace("TracerTimer: start");
@@ -408,7 +408,7 @@ namespace ACoreLib {
 #endif
 
           //call event handlers for MessagesTraced
-          var wasMessagesTraced = MessagesTraced; //prevents multithreading issues if the only listener gets removed immediately after if.
+          var wasMessagesTraced = MessagesTraced; //prevents multi-threading issues if the only listener gets removed immediately after if.
           if (wasMessagesTraced!=null) {//events are immutable. Once we have a copy, the invocation list will not change
             foreach (Action<ACoreLib.TraceMessage[]> handler in wasMessagesTraced.GetInvocationList()) {
               try {
@@ -422,7 +422,7 @@ namespace ACoreLib {
               }
             }
 #if RealTimeTraceing
-            RealTimeTracer.Trace("TracerTimer: all eventhandlers executed");
+            RealTimeTracer.Trace("TracerTimer: all EventHandlers executed");
 #endif
           }
         } finally {
@@ -456,8 +456,8 @@ namespace ACoreLib {
 
     /// <summary>
     /// Empties the internal temporary trace message buffer into the final MessageBuffer and raises the MessagesTraced 
-    /// event if messages got copied. Call Flush when application closes to ensure that all temporarilystored trace messages 
-    /// get processed by any MessagesTraced listerners.
+    /// event if messages got copied. Call Flush when application closes to ensure that all temporarily stored trace messages 
+    /// get processed by any MessagesTraced listeners.
     /// </summary>
     public static void Flush(bool needsStopTracing = false) {
       if (isTracerTimerMethodRunning>0) {
@@ -516,7 +516,7 @@ namespace ACoreLib {
 #if DEBUG
       try {
         if (IsBreakOnException && Debugger.IsAttached) {
-          //if an exception has occured, then the messge is available in the ouput window of the debugger
+          //if an exception has occurred, then the message is available in the output window of the debugger
           Debug.WriteLine("going to throw exception '" + ex.Message + "'");
           Debugger.Break();
         }
@@ -540,11 +540,11 @@ namespace ACoreLib {
     /// <summary>
     /// Make a break in Visual Studio, if it is attached
     /// </summary>
-    public static void BreakInDebuggerOrDoNothing(string message) {
+    public static void BreakInDebuggerOrDoNothing(string? _/*message*/) {
 #if DEBUG
       try {
         if (Debugger.IsAttached) {
-          //if an exception has occured, then the messge is available in the ouput window of the debugger
+          //if an exception has occurred, then the message is available in the output window of the debugger
           Debug.WriteLine(DateTime.Now.ToString("mm:ss.fff") + " BreakInDebuggerOrDoNothing");
           Debugger.Break();
         }

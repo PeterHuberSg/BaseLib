@@ -32,7 +32,7 @@ namespace ACoreLib {
     string directoryPath;
 
     /// <summary>
-    /// File Name (Exclude the extension name eg: testfile)
+    /// File Name (Exclude the extension name e.g.: testFile)
     /// </summary>
     public readonly string FileName;
 
@@ -42,7 +42,7 @@ namespace ACoreLib {
     public readonly string FileExtension;
 
     /// <summary>
-    /// The Max size of the File in bytes. If 0, file size is not limitted.
+    /// The Max size of the File in bytes. If 0, file size is not limited.
     /// </summary>
     public long MaxFileByteCount { get { return maxFileByteCount; } }
     long maxFileByteCount;
@@ -147,7 +147,7 @@ namespace ACoreLib {
 
 
     /// <summary>
-    /// Overwrite DirectoryPath. This is usful for overwriting a relative directory path
+    /// Overwrite DirectoryPath. This is useful for overwriting a relative directory path
     /// by the absolute directory path
     /// </summary>
     /// <param name="newDirectoryPath"></param>
@@ -215,7 +215,7 @@ namespace ACoreLib {
     /// <summary>
     /// Full Path of the current active file
     /// </summary>
-    public string FullName { get { return currentFileInfo.FullName; } }
+    public string FullName { get { return currentFileInfo!.FullName; } }
 
     /// <summary>
     /// Number of files being presently managed
@@ -232,36 +232,30 @@ namespace ACoreLib {
     //      -----------
 
     private int currentFileNumber;
-    private List<FileInfoNumberStruct> fileList;
-    private DirectoryInfo directoryInfo;
-    private FileInfo currentFileInfo;
+    private readonly List<FileInfoNumberStruct> fileList;
+    private readonly DirectoryInfo directoryInfo;
+    private FileInfo? currentFileInfo;
 
     /// <summary>
-    /// Constructor
-    /// 
-    /// Creates and opens/closes a file
-    /// 
-    /// will throw an exception if file cannot be created
+    /// Constructor. Creates and opens/closes a file. Will throw an exception if file cannot be created
     /// </summary>
     public FileSizeManager(FileParameterStruct newParameter) {
-      //ensure that parameters are valid.
-      string problem = null;
-      if (!newParameter.ValidateConstructorParameters(false, out problem)) {
-        throw new Exception("Cannot create '" + newParameter.ToString() + "'." +  
-          (problem==null ? "" : " The following problem occured: " + Environment.NewLine + problem));
+                              //ensure that parameters are valid.
+      if (!newParameter.ValidateConstructorParameters(false, out var problem)) {
+        throw new Exception("Cannot create '" + newParameter.ToString() + "'. The following problem occurred: " + Environment.NewLine + 
+          problem);
       }
 
-      //create directory if necessary and prepare filelist
+      //create directory if necessary and prepare fileList
       directoryInfo = Directory.CreateDirectory(newParameter.DirectoryPath);
       newParameter.UpdateDirectoryPath(directoryInfo.FullName);
       fileParameter = newParameter;
       fileList = new List<FileInfoNumberStruct>();
 
-      //Read fileinfos with file numbers into sorted fileList
+      //Read fileInfos with file numbers into sorted fileList
       FileInfo[] fileInfos =
           directoryInfo.GetFiles(fileParameter.GetFileSearchPattern(), SearchOption.TopDirectoryOnly);
 
-      int fileNumber = 1;
       currentFileNumber = 1;
       //TestFileName123.tst ==> 123
       //             TestFileName
@@ -270,7 +264,7 @@ namespace ACoreLib {
       int extensionLength = 1 + fileParameter.FileExtension.Length;
       foreach (FileInfo fileInfo in fileInfos) {
         string fileName = fileInfo.Name;
-        if (int.TryParse(fileName.Substring(startPos, fileName.Length-startPos-extensionLength), out fileNumber)) {
+        if (int.TryParse(fileName.Substring(startPos, fileName.Length-startPos-extensionLength), out var fileNumber)) {
           fileList.Add(new FileInfoNumberStruct(fileNumber, fileInfo));
 
           if (fileNumber>currentFileNumber) {
@@ -306,7 +300,7 @@ namespace ACoreLib {
           //create file with same file number
           createNewFile();
         } else if (newFile.Length>=fileParameter.MaxFileByteCount) {
-          //limit file size, create file with incremented file numner
+          //limit file size, create file with incremented file number
           currentFileNumber++;
           createNewFile();
         }
@@ -355,7 +349,7 @@ namespace ACoreLib {
     #region File Information Structure
     //      --------------------------
 
-    private struct FileInfoNumberStruct: IComparable<FileInfoNumberStruct> {
+    public struct FileInfoNumberStruct: IComparable<FileInfoNumberStruct> {
       public int FileNumber;
       public FileInfo FileInfo;
 

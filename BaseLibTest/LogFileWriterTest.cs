@@ -148,17 +148,16 @@ namespace ACoreLibTest {
       testFileParameterStruct = new FileParameterStruct(defaultDir, defaultFile, defaultExt, 1000000L, 10);
       logFileWriter = assertCreation(testFileParameterStruct);
       logFileWriter.WriteMessage(lineIndex++.ToString("000000 ") + testWriteLine);
-      string currentFileName = logFileWriter.FullName;
+      string currentFileName = logFileWriter.FullName!;
       assertContent(logFileWriter, 0, lineIndex, testWriteLine, 1, isDispose: false);
 
       //block currentFile
       using (FileStream stringTraceReaderFileStream = new FileStream(currentFileName, FileMode.Open, FileAccess.Read, FileShare.None)) {
-        using (StreamReader stringTraceReader = new StreamReader(stringTraceReaderFileStream)) {
-          //force tracer to write ==> should open a new file
-          logFileWriter = assertCreation(testFileParameterStruct);
-          logFileWriter.WriteMessage(lineIndex++.ToString("000000 ") + testWriteLine);
-          assertContent(logFileWriter, 1, lineIndex-1, testWriteLine, 2, isDispose: true);
-        }
+        using StreamReader stringTraceReader = new StreamReader(stringTraceReaderFileStream);
+        //force tracer to write ==> should open a new file
+        logFileWriter = assertCreation(testFileParameterStruct);
+        logFileWriter.WriteMessage(lineIndex++.ToString("000000 ") + testWriteLine);
+        assertContent(logFileWriter, 1, lineIndex-1, testWriteLine, 2, isDispose: true);
       }
       deleteTestFolder(defaultDir);
 
@@ -187,18 +186,17 @@ namespace ACoreLibTest {
     /// no exception is thrown, the unit test fails.
     /// </summary>
     private static void assertException(
-      string testDirectory,
-      string testFileName,
-      string testExtention,
+      string? testDirectory,
+      string? testFileName,
+      string? testExtention,
       long testMaxFileSize,
       int testMaxFileCount,
       string message)//
     {
       try {
         FileParameterStruct testFileParameterStruct =
-          new FileParameterStruct(testDirectory, testFileName, testExtention, testMaxFileSize, testMaxFileCount);
-        string problem;
-        Assert.IsFalse(testFileParameterStruct.ValidateConstructorParameters(true, out problem));
+          new FileParameterStruct(testDirectory!, testFileName!, testExtention!, testMaxFileSize, testMaxFileCount);
+        Assert.IsFalse(testFileParameterStruct.ValidateConstructorParameters(true, out var problem));
 
         LogFileWriter logFileWriter = new LogFileWriter(testFileParameterStruct);
         Assert.Fail("String Tracker: Constructor should throw ALibException for " + message);
@@ -218,8 +216,7 @@ namespace ACoreLibTest {
     /// are the same as in the testFileParameters.
     /// </summary>
     private static LogFileWriter assertCreation(FileParameterStruct testFileParameterStruct) {
-      string problem;
-      Assert.IsTrue(testFileParameterStruct.ValidateConstructorParameters(true, out problem));
+      Assert.IsTrue(testFileParameterStruct.ValidateConstructorParameters(true, out var problem));
       LogFileWriter logFileWriter =
         new LogFileWriter(testFileParameterStruct, logFileWriterTimerInitialDelay: TracerInitialDelay, logFileWriterTimerInterval: TracerTimerInterval);
 
@@ -233,11 +230,8 @@ namespace ACoreLibTest {
     }
 
 
-    static string[] lineSeparator = new string[] { Environment.NewLine };
-
-
     /// <summary>
-    /// Asserts that the file from logFileWriter contains expectedLineCount times the string expectedLineString preceedet
+    /// Asserts that the file from logFileWriter contains expectedLineCount times the string expectedLineString preceded
     /// by a running number.
     /// </summary>
     private static void assertContent(
@@ -265,18 +259,16 @@ namespace ACoreLibTest {
       Assert.IsTrue(File.Exists(logFileWriter.FileParameter.DirectoryPath + @"\" + logFileWriter.FileParameter.FileName +
         expectedFileCount + "." + logFileWriter.FileParameter.FileExtension));
 
-      using (FileStream stringTraceReaderFileStream = new FileStream(logFileWriter.FullName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-        using (StreamReader stringTraceReader = new StreamReader(stringTraceReaderFileStream)) {
-          int actualLineCount = lineCountOffset;
-          while (!stringTraceReader.EndOfStream) {
-            string actualLineString = stringTraceReader.ReadLine();
-            string numberAndLineString = actualLineCount.ToString("000000 ") + expectedLineString;
-            Assert.AreEqual(numberAndLineString, actualLineString);
-            actualLineCount++;
-          }
-          Assert.AreEqual(actualLineCount, lineCountOffset+expectedLineCount);
-        }
+      using FileStream stringTraceReaderFileStream = new FileStream(logFileWriter.FullName!, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+      using StreamReader stringTraceReader = new StreamReader(stringTraceReaderFileStream);
+      int actualLineCount = lineCountOffset;
+      while (!stringTraceReader.EndOfStream) {
+        string actualLineString = stringTraceReader.ReadLine()!;
+        string numberAndLineString = actualLineCount.ToString("000000 ") + expectedLineString;
+        Assert.AreEqual(numberAndLineString, actualLineString);
+        actualLineCount++;
       }
+      Assert.AreEqual(actualLineCount, lineCountOffset+expectedLineCount);
     }
 
 

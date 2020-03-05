@@ -22,7 +22,7 @@ namespace ACoreLib {
       try {
         return string.Format(formatString, args);
       } catch (Exception ex) {
-        //formatString has illegal format. return origianl format string with exception message
+        //formatString has illegal format. return original format string with exception message
         Tracer.ShowExceptionInDebugger(ex);
         return formatString + " !!! Args conversion error: '" + ex.Message + "' + args: '" + args + "'";
       }

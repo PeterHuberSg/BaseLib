@@ -39,16 +39,13 @@ namespace ACoreLibTest {
       const int maxTestDataRecord = 5;
       FifoBuffer<testDataStruct> testFifoBuffer = new FifoBuffer<testDataStruct>(maxTestDataRecord);
       //      testDataStruct testRecord;
-      testDataStruct? testRecordNullable;
 
       //empty buffer
       Assert.IsTrue(testFifoBuffer.IsEmpty, "buffer should be empty, but was " + testFifoBuffer.ToString());
       Assert.IsFalse(testFifoBuffer.IsFull, "buffer should not be full, but was " + testFifoBuffer.ToString());
       Assert.AreEqual(0, testFifoBuffer.Count, "wrong number of records in buffer " + testFifoBuffer.ToString());
-      Assert.IsFalse(testFifoBuffer.ReadAt(0, out testRecordNullable), "It should not be possible to read an empty buffer" + testFifoBuffer.ToString());
+      Assert.IsFalse(testFifoBuffer.ReadAt(0, out _), "It should not be possible to read an empty buffer" + testFifoBuffer.ToString());
       assertReadAtException(0, testFifoBuffer, "It should not be possible to read an empty buffer");
-
-
       //fill buffer
       for (int j = 0; j<maxTestDataRecord; j++) {
         int i;
@@ -63,10 +60,10 @@ namespace ACoreLibTest {
           Assert.AreEqual(i+1, testFifoBuffer.Count, "wrong number of records in buffer " + testFifoBuffer.ToString());
           int k;
           for (k = 0; k<=i; k++) {
-            Assert.IsTrue(testFifoBuffer.ReadAt(k, out testRecordNullable), "It should be possible to read from position " + k.ToString() + " from buffer" + testFifoBuffer.ToString());
+            Assert.IsTrue(testFifoBuffer.ReadAt(k, out _), "It should be possible to read from position " + k.ToString() + " from buffer" + testFifoBuffer.ToString());
             Assert.IsTrue(testFifoBuffer.ReadAt(k).Counter==k, "It should be possible to read from position " + k.ToString() + " from buffer" + testFifoBuffer.ToString());
           }
-          Assert.IsFalse(testFifoBuffer.ReadAt(k, out testRecordNullable), "It should not be possible to read from position " + k.ToString() + " from buffer" + testFifoBuffer.ToString());
+          Assert.IsFalse(testFifoBuffer.ReadAt(k, out _), "It should not be possible to read from position " + k.ToString() + " from buffer" + testFifoBuffer.ToString());
           assertReadAtException(k, testFifoBuffer, "t should not be possible to read from this position.");
 
         }
@@ -80,8 +77,8 @@ namespace ACoreLibTest {
 
         //empty buffer
         for (i = 0; i<maxTestDataRecord-1; i++) {
-          Assert.IsTrue(testFifoBuffer.Remove(out testRecordNullable), "Could not remove dataRecord to buffer " + testFifoBuffer.ToString());
-          Assert.AreEqual(i, testRecordNullable.Value.Counter, "Wrong test record content in buffer " + testFifoBuffer.ToString());
+          Assert.IsTrue(testFifoBuffer.Remove(out var testRecordNullable), "Could not remove dataRecord to buffer " + testFifoBuffer.ToString());
+          Assert.AreEqual(i, testRecordNullable!.Value.Counter, "Wrong test record content in buffer " + testFifoBuffer.ToString());
           if (i==maxTestDataRecord-2) {
             Assert.IsTrue(testFifoBuffer.IsEmpty, "buffer should be empty, but was " + testFifoBuffer.ToString());
           } else {
@@ -91,7 +88,7 @@ namespace ACoreLibTest {
           Assert.AreEqual(maxTestDataRecord - 2 - i, testFifoBuffer.Count, "wrong number of records in buffer " + testFifoBuffer.ToString());
         }
         //try to read too many records
-        Assert.IsFalse(testFifoBuffer.Remove(out testRecordNullable), "Could not remove dataRecord to buffer " + testFifoBuffer.ToString());
+        Assert.IsFalse(testFifoBuffer.Remove(out _), "Could not remove dataRecord to buffer " + testFifoBuffer.ToString());
         Assert.IsTrue(testFifoBuffer.IsEmpty, "buffer should be empty, but was " + testFifoBuffer.ToString());
         Assert.IsFalse(testFifoBuffer.IsFull, "buffer should not be full, but was " + testFifoBuffer.ToString());
         Assert.AreEqual(0, testFifoBuffer.Count, "wrong number of records in buffer " + testFifoBuffer.ToString());
@@ -138,7 +135,7 @@ namespace ACoreLibTest {
 
         //advance buffer by 1
         Assert.IsTrue(testFifoBuffer.Add(new testDataStruct(i)), "Could not add dataRecord to buffer " + testFifoBuffer.ToString());
-        Assert.IsTrue(testFifoBuffer.Remove(out testRecordNullable), "Could not remove dataRecord to buffer " + testFifoBuffer.ToString());
+        Assert.IsTrue(testFifoBuffer.Remove(out _), "Could not remove dataRecord to buffer " + testFifoBuffer.ToString());
       }
     }
 
@@ -151,13 +148,13 @@ namespace ACoreLibTest {
         exceptionFound = true;
         if (ex.GetType() != typeof(Exception)) {
           throw new Exception(errorMessage + Environment.NewLine +
-            "Exception was excpected when reading from Position " + position + ", but '" + ex.GetType().ToString() +
+            "Exception was expected when reading from Position " + position + ", but '" + ex.GetType().ToString() +
             "' was thrown. " + testFifoBuffer.ToString());
         }
       }
       if (!exceptionFound) {
         throw new Exception(errorMessage + Environment.NewLine +
-            "Exception was excpected when reading from Position " + position + ", but no exception was thrown was thrown. " +
+            "Exception was expected when reading from Position " + position + ", but no exception was thrown was thrown. " +
             testFifoBuffer.ToString());
       }
     }
@@ -171,21 +168,21 @@ namespace ACoreLibTest {
         exceptionFound = true;
         if (ex.GetType() != typeof(Exception)) {
           throw new Exception(errorMessage + Environment.NewLine +
-            "Exception was excpected when removing a record, but '" + ex.GetType().ToString() +
+            "Exception was expected when removing a record, but '" + ex.GetType().ToString() +
             "' was thrown. " + testFifoBuffer.ToString());
         }
       }
       if (!exceptionFound) {
         throw new Exception(errorMessage + Environment.NewLine +
-            "Exception was excpected when removing a record, but no exception was thrown was thrown. " +
+            "Exception was expected when removing a record, but no exception was thrown was thrown. " +
             testFifoBuffer.ToString());
       }
     }
     #endregion
 
 
-    #region Multithreaded Tests
-    //      -------------------
+    #region Multi threaded Tests
+    //      --------------------
 
     private struct testBigDataStruct {
       public long Counter;
@@ -202,7 +199,7 @@ namespace ACoreLibTest {
 
     const int maxBigTestDataRecord = 100000 * 1;
     const long testLoops = 100L*maxBigTestDataRecord;
-    private FifoBuffer<testBigDataStruct> testBigFifoBuffer;
+    private FifoBuffer<testBigDataStruct>? testBigFifoBuffer;
 
 
     [TestMethod]
@@ -211,7 +208,6 @@ namespace ACoreLibTest {
       testBigFifoBuffer = new FifoBuffer<testBigDataStruct>(maxBigTestDataRecord);
       long WorkingSet2 = Process.GetCurrentProcess().WorkingSet64;
       long sizeoftestBigFifoBuffer = WorkingSet2 - WorkingSet1;
-      testBigDataStruct? bigDataRecord;
       DateTime startTime = DateTime.Now;
 
       ThreadPool.QueueUserWorkItem(new WaitCallback(writerThread));
@@ -223,8 +219,8 @@ namespace ACoreLibTest {
           //interrupt the thread at random intervals. Don't use sleep or spinWait,
           //because this would switch the thread at well defined thread execution points
         }
-        if (!testBigFifoBuffer.Remove(out bigDataRecord)) {
-          throw new Exception("Buffer Reader: Buffer is not suposed to be empty, but reading failed. Buffer: " + testBigFifoBuffer.ToString());
+        if (!testBigFifoBuffer.Remove(out var bigDataRecord)) {
+          throw new Exception("Buffer Reader: Buffer is not supposed to be empty, but reading failed. Buffer: " + testBigFifoBuffer.ToString());
         }
         if (bigDataRecord.Value.Counter!=ReadCounter) {
           throw new Exception("Buffer Reader: Next item should be " + ReadCounter.ToString() +" but was " + bigDataRecord.Value.Counter.ToString() + ". Buffer: " + testBigFifoBuffer.ToString());
@@ -235,9 +231,9 @@ namespace ACoreLibTest {
     }
 
 
-    private void writerThread(Object stateInfo) {
+    private void writerThread(Object? stateInfo) {
       for (long i = 0L; i<=testLoops; i++) {
-        while (testBigFifoBuffer.IsFull) {
+        while (testBigFifoBuffer!.IsFull) {
           //this is on purpose a busy wait, because the operating system should
           //interrupt the thread at random intervals. Don't use sleep or spinWait,
           //because this would switch the thread at well defined thread execution points
