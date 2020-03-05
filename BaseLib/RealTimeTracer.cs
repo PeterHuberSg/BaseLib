@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading;
 
 
-namespace ACoreLib {
+namespace BaseLib {
 
 
   /// <summary>

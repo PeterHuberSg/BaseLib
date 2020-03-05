@@ -6,7 +6,7 @@ fit for a particular purpose or non-infringing. Use this code only if you agree 
 using it is with you :-)
 ***************************************************************************************************************************/
 
-namespace ACoreLib {
+namespace BaseLib {
 
 
   public enum TraceTypeEnum {

@@ -8,7 +8,7 @@ using it is with you :-)
 
 using System;
 
-namespace ACoreLib {
+namespace BaseLib {
   public static class StringsExtensions {
 
     /// <summary>

@@ -11,7 +11,7 @@ using System.Reflection;
 using System.Text;
 
 
-namespace ACoreLib {
+namespace BaseLib {
 
 	/// <summary>
 	/// Holds extension method to display details of an exception

@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 
 
-namespace ACoreLib {
+namespace BaseLib {
 
 
   #region FileParameterStruct

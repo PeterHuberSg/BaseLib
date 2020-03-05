@@ -9,7 +9,7 @@ using it is with you :-)
 using System.Collections.Generic;
 using System.Text;
 
-namespace ACoreLib {
+namespace BaseLib {
 
 
   /// <summary>

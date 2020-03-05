@@ -37,7 +37,7 @@ using System.Diagnostics;
 using System.Threading;
 
 
-namespace ACoreLib {
+namespace BaseLib {
 
 
   /// <summary>
@@ -410,7 +410,7 @@ namespace ACoreLib {
           //call event handlers for MessagesTraced
           var wasMessagesTraced = MessagesTraced; //prevents multi-threading issues if the only listener gets removed immediately after if.
           if (wasMessagesTraced!=null) {//events are immutable. Once we have a copy, the invocation list will not change
-            foreach (Action<ACoreLib.TraceMessage[]> handler in wasMessagesTraced.GetInvocationList()) {
+            foreach (Action<BaseLib.TraceMessage[]> handler in wasMessagesTraced.GetInvocationList()) {
               try {
                 handler(newTracerMessages);
               } catch (Exception ex) {
