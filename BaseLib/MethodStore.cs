@@ -24,7 +24,7 @@ namespace BaseLib {
     /// <summary>
     /// Time when MethodTask should be executed
     /// </summary>
-    public DateTime Time { get; private set; }
+    public DateTime DateTime { get; private set; }
 
 
     /// <summary>
@@ -36,7 +36,7 @@ namespace BaseLib {
     /// <summary>
     /// Delegate to be executed
     /// </summary>
-    public Action<object> Method { get; private set; }
+    public Action<object?> Method { get; private set; }
 
 
     /// <summary>
@@ -69,8 +69,8 @@ namespace BaseLib {
     /// <summary>
     /// Constructor
     /// </summary>
-    public MethodTask(DateTime time, Action<object> method, object? parameter, string? description) {
-      Time = time;
+    public MethodTask(DateTime dateTime, Action<object?> method, object? parameter, string? description) {
+      DateTime = dateTime;
       MethodTaskId = nextMethodTaskId++;
       if (nextMethodTaskId>digitsLimit) {
         digitsLimit *= 10;
@@ -91,7 +91,7 @@ namespace BaseLib {
     /// </summary>
     public override string ToString() {
       return
-        Time.ToString("dd.MM.yyyy HH:mm:ss") +
+        DateTime.ToString("dd.MM.yyyy HH:mm:ss") +
         "   ID: " + MethodTaskId.ToString(taskIdMask) + "   " +
         Method.Method.Name + "(" + (Parameter??"") + ")" +
         (Description==null ? "" : "   " + Description);
@@ -132,8 +132,8 @@ namespace BaseLib {
     /// <summary>
     /// Add a method to be executed at date to MethodStore
     /// </summary>
-    public void Add(DateTime date, Action<object> method, object? parameter, string? description = null) {
-      MethodTask methodTask = new MethodTask(date, method, parameter, description);
+    public void Add(DateTime dateTime, Action<object?> method, object? parameter, string? description = null) {
+      MethodTask methodTask = new MethodTask(dateTime, method, parameter, description);
       lock (methodTasks) {
         methodTasks.Add(methodTask);
       }
@@ -151,7 +151,7 @@ namespace BaseLib {
       MethodTask? methodTask;
       lock (methodTasks) {
         methodTask = methodTasks.Min;
-        if (methodTask!=null && methodTask.Time< DateTime.Now) {
+        if (methodTask!=null && methodTask.DateTime< DateTime.Now) {
           methodTasks.Remove(methodTask);
         } else {
           methodTask = null;
@@ -195,7 +195,7 @@ namespace BaseLib {
     // that is sorted time and then TaskId. 
     public class FetchMethodComparer: IComparer<MethodTask> {
       public int Compare(MethodTask methodTask1, MethodTask methodTask2) {
-        int compareDate = methodTask1.Time.CompareTo(methodTask2.Time);
+        int compareDate = methodTask1.DateTime.CompareTo(methodTask2.DateTime);
         if (compareDate!=0) return compareDate;
 
         return methodTask1.MethodTaskId.CompareTo(methodTask2.MethodTaskId);
