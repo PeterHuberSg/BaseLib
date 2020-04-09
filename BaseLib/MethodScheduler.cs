@@ -32,15 +32,21 @@ namespace BaseLib {
     #region Constructor
     //      -----------
     Thread? schedulerThread;
-    readonly int sleepMilliSeconds;
+    readonly int initialDelayMilliSec;
+    readonly int pollingDelayMilliSec;
 
 
-    public MethodScheduler(int sleepMilliSeconds = 500) {
+    /// <summary>
+    /// Constructs a MethodScheduler, executing the first method earliest after initialDelayMilliSec. The scheduler then
+    /// runs every pollingDelayMilliSec to see if any new method should get called.
+    /// </summary>
+    public MethodScheduler(int initialDelayMilliSec = 500, int pollingDelayMilliSec = 500) {
+      this.initialDelayMilliSec = initialDelayMilliSec;
+      this.pollingDelayMilliSec = pollingDelayMilliSec;
       methodStore = new MethodStore(methodSchedulerUpdated);
       schedulerThread = new Thread(fetchThreadMethod) {
         Name = "SchedulerThread"
       };
-      this.sleepMilliSeconds = sleepMilliSeconds;
       schedulerThread.Start();
     }
     #endregion
@@ -101,6 +107,10 @@ namespace BaseLib {
 
     void fetchThreadMethod() {
       try {
+        if (initialDelayMilliSec>0) {
+          Tracer.Trace("MethodScheduler: SchedulerThread starting");
+          Thread.Sleep(initialDelayMilliSec);
+        }
         Tracer.Trace("MethodScheduler: SchedulerThread started");
         //DateTime excutionTime = DateTime.Now.AddSeconds(3);
         //excutionTime = DateTime.Now.AddSeconds(10);
@@ -120,7 +130,7 @@ namespace BaseLib {
             if (!isNothingToDo) {
               isNothingToDo = true;
             }
-            Thread.Sleep(sleepMilliSeconds);
+            Thread.Sleep(pollingDelayMilliSec);
           }
         }
       } catch (Exception ex) {

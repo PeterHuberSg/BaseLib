@@ -20,24 +20,36 @@ namespace BaseLibTest {
   public class MethodSchedulerTest {
 
     MethodScheduler? methodScheduler;
-    bool isWaitingEorTest2;
+    bool isWaitingForTest2;
 
 
     [TestMethod]
     public void TestMethodScheduler() {
-      using (methodScheduler = new MethodScheduler(50)) {
-        isWaitingEorTest2 = true;
+      using (methodScheduler = new MethodScheduler(50, 50)) {
+        isWaitingForTest2 = true;
         var now = DateTime.Now;
-        methodScheduler.Add(now.AddMilliseconds(100), test1, null, "test1");
+        methodScheduler.Add(now, test0, null, "test0");
+        methodScheduler.Add(now.AddMilliseconds(200), test1, null, "test1");
         methodScheduler.Add(now.AddMilliseconds(300), test2, null, "test2");
         var allTasks = methodScheduler.GetAllTasks();
-        Assert.AreEqual("test1", allTasks![0].Description);
-        Assert.AreEqual("test2", allTasks![1].Description);
-        while (isWaitingEorTest2) {
+        Assert.AreEqual("test0", allTasks![0].Description);
+        Assert.AreEqual("test1", allTasks![1].Description);
+        Assert.AreEqual("test2", allTasks![2].Description);
+        while (isWaitingForTest2) {
           Thread.Sleep(40);
         }
         allTasks = methodScheduler.GetAllTasks();
         Assert.AreEqual(0, allTasks!.Length);
+      }
+    }
+
+
+    private void test0(object? obj) {
+      var methodSchedulerLocal = methodScheduler;
+      if (methodSchedulerLocal!=null) {
+        var allTasks = methodSchedulerLocal.GetAllTasks();
+        Assert.AreEqual("test1", allTasks![0].Description);
+        Assert.AreEqual("test2", allTasks![1].Description);
       }
     }
 
@@ -57,7 +69,7 @@ namespace BaseLibTest {
         var allTasks = methodSchedulerLocal.GetAllTasks();
         Assert.AreEqual(0, allTasks!.Length);
       }
-      isWaitingEorTest2 = false;
+      isWaitingForTest2 = false;
     }
   }
 }
