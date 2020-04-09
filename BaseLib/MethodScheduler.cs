@@ -72,16 +72,15 @@ namespace BaseLib {
     }
 
 
-    bool isDisposed = false;
+    int isDisposed = 0;
 
     /// <summary>
     /// Signals SchedulerThread to stop and waits until this happened. Dispose can be called multiple times. Only the first time
-    /// will be delayed. It is not really multi-threading safe, but should be ok, since usually only 1 thread creates and disposes 
-    /// MethodScheduler.
+    /// will be delayed. 
     /// </summary>
     public void Dispose() {
-      if (!isDisposed) {
-        isDisposed = true;
+      var isDisposedOld = Interlocked.Exchange(ref isDisposed, 1);
+      if (isDisposedOld==0) {
         //it's not really needed to remove registered events to prevent memory leak. It might prevent that events get raised after this
         //point in time
         if (MethodTasksUpdated!=null) {
@@ -117,7 +116,7 @@ namespace BaseLib {
         //methodStore.Add(excutionTime, testMethodOverFlow, null);
         //methodStore.Add(excutionTime, testMethod, excutionTime, "Test Method " + excutionTime.ToString("HH:mm:ss"));
 
-        while (!isDisposed) {
+        while (isDisposed==0) {
           MethodTask? methodTask = methodStore.GetNext();
           if (methodTask!=null) {
             isNothingToDo = false;
