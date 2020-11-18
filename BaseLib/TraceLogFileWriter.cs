@@ -146,7 +146,7 @@ namespace BaseLib {
         }
       }
 
-      var wasLogFileWriter = Interlocked.Exchange(ref logFileWriter, null);
+      var wasLogFileWriter = Interlocked.Exchange<LogFileWriter?>(ref logFileWriter, null);
       if (wasLogFileWriter!=null) {
         Tracer.RemoveMessagesTracedListener(writeMessages);
         wasLogFileWriter.Dispose();

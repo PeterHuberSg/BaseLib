@@ -29,8 +29,10 @@ namespace TracerLib {
   class Program {
 
     public static void Main(string[] _/*args*/) {
+      #pragma warning disable CA1416 // Validate platform compatibility
       Console.WindowHeight = Console.LargestWindowHeight *5 /6;
       Console.WindowWidth = Console.LargestWindowWidth *5 /6;
+      #pragma warning restore CA1416 
       Console.WriteLine("Tracer Test");
       Console.WriteLine("===========");
       Console.WriteLine();

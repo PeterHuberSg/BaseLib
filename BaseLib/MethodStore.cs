@@ -192,13 +192,16 @@ namespace BaseLib {
 
 
     // Defines a comparer to create a sorted set 
-    // that is sorted time and then TaskId. 
+    // that is sorted by time and then TaskId. 
     public class FetchMethodComparer: IComparer<MethodTask> {
-      public int Compare(MethodTask methodTask1, MethodTask methodTask2) {
-        int compareDate = methodTask1.DateTime.CompareTo(methodTask2.DateTime);
-        if (compareDate!=0) return compareDate;
+      public int Compare(MethodTask? methodTask1, MethodTask? methodTask2) {
+        if (methodTask1 is null) return methodTask2 is null ? 0 : -1;
 
-        return methodTask1.MethodTaskId.CompareTo(methodTask2.MethodTaskId);
+        if (methodTask2 is null) return 1;
+
+
+        int compareDateResult = methodTask1.DateTime.CompareTo(methodTask2.DateTime);
+        return compareDateResult!=0 ? compareDateResult : methodTask1.MethodTaskId.CompareTo(methodTask2.MethodTaskId);
       }
     }
     #endregion
