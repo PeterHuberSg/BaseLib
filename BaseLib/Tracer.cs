@@ -74,32 +74,6 @@ namespace BaseLib {
 
 
     /// <summary>
-    /// Trace messages get processed every TimerIntervallMilliseconds.
-    /// </summary>
-    public const int TimerIntervallMilliseconds = 100;
-
-
-    /// <summary>
-    /// The number of trace messages Tracer stores in MessageBuffer before overwriting them. The messages in MessageBuffer can be 
-    /// read with GetTrace().
-    /// </summary>
-    public const int MaxMessageBuffer = 1000;
-
-
-    /// <summary>
-    /// The number of trace messages Tracer stores in messageQueue before reporting an overflow. messageQueue is an internal buffer and 
-    /// gets continuously emptied.
-    /// </summary>
-    public const int MaxMessageQueue = MaxMessageBuffer/3;
-
-
-    /// <summary>
-    /// Stop in the debugger if one is attached and the trace is a warning
-    /// </summary>
-    public static bool IsBreakOnWarning = true;
-
-
-    /// <summary>
     /// Stop in the debugger if one is attached and the trace is an error
     /// </summary>
     public static bool IsBreakOnError = true;
@@ -110,6 +84,78 @@ namespace BaseLib {
     /// exceptions, it's useful to setIsBreakOnException IsBreakOnException as false.
     /// </summary>
     public static bool IsBreakOnException = true;
+
+
+    /// <summary>
+    /// Stop in the debugger if one is attached and the trace is a warning
+    /// </summary>
+    public static bool IsBreakOnWarning = true;
+
+
+    /// <summary>
+    /// Trace messages get processed every TimerIntervallMilliseconds.
+    /// </summary>
+    public static int TimerIntervallMilliseconds { get; private set; } = 100;
+
+
+    /// <summary>
+    /// The number of trace messages Tracer stores in MessageBuffer before overwriting them. The messages in MessageBuffer can be 
+    /// read with GetTrace().
+    /// </summary>
+    public static int MaxMessageBuffer { get; private set; } = 1000;
+
+
+    /// <summary>
+    /// The number of trace messages Tracer stores in messageQueue before reporting an overflow. messageQueue is an internal buffer and 
+    /// gets continuously emptied.
+    /// </summary>
+    public static int MaxMessageQueue { get; private set; } = MaxMessageBuffer/3;
+
+
+
+    /// <summary>
+    /// Setup Tracer, which might not be needed at all. Tracer is supposed to work from the first line of
+    /// application code. However, if bigger buffers are needed, setup Tracer at the start of your application.
+    /// </summary>
+    /// <param name="timerIntervallMilliseconds">Trace messages get processed every TimerIntervallMilliseconds.</param>
+    /// <param name="MaxMessageBuffer"></param>
+    /// <param name="MaxMessageQueue"></param>
+    public static void Setup(int timerIntervallMilliseconds = 100, int maxMessageBuffer = 1000, int maxMessageQueue = 1000/3) {
+      if (timerIntervallMilliseconds<=0) 
+        throw new ArgumentException($"timerIntervallMilliseconds: {timerIntervallMilliseconds} must be greater than 0'");
+      if (maxMessageBuffer<MaxMessageQueue) 
+        throw new ArgumentException($"maxMessageBuffer {maxMessageBuffer} must be greater or equal maxMessageQueue: {maxMessageQueue}.");
+
+#if RealTimeTraceing
+      RealTimeTracer.Trace($"Setup(timerIntervallMilliseconds: {timerIntervallMilliseconds}, maxMessageBuffer: {maxMessageBuffer}, maxMessageQueue: {maxMessageQueue})");
+#endif
+
+      tracerTimer.Change(Timeout.Infinite, Timeout.Infinite); //stops timer from starting
+      //if timer is running already, wait until it has finished
+      if (isTracerTimerMethodRunning>0) {
+        //the messages are presently copied, just wait until copy finishes
+#if RealTimeTraceing
+        RealTimeTracer.Trace($"Setup(): Timer is running, wait for completion");
+#endif
+        do {
+#if RealTimeTraceing
+          RealTimeTracer.Trace($"Setup(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+#endif
+          Thread.Sleep(1);
+        } while (isTracerTimerMethodRunning>0);
+#if RealTimeTraceing
+        RealTimeTracer.Trace($"Setup(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+#endif
+      }
+      //timer has definitely stopped
+      lock (messageBuffer) {
+        lock (messagesQueue) {
+          MaxMessageBuffer = maxMessageBuffer;
+          MaxMessageQueue = maxMessageQueue;
+        }
+      }
+      tracerTimer.Change(10, timerIntervallMilliseconds); //restart timer in 10 milliseconds
+    }
     #endregion
 
 
@@ -264,7 +310,7 @@ namespace BaseLib {
 
     private static void enqueueMessage(TraceTypeEnum traceType, string? filterText, string message) {
 #if RealTimeTraceing
-        RealTimeTracer.Trace("enqueueMessage(): start " + traceType.ShortString() + ": " + threadMessageBuffer);
+        RealTimeTracer.Trace("enqueueMessage(): start " + traceType.ShortString() + ": " + message);
 #endif
       TraceMessage traceMessage = new TraceMessage(traceType, message, filterText);
 
@@ -302,14 +348,24 @@ namespace BaseLib {
 #endif
         }
         //Monitor.Pulse(messagesQueue);
-#if RealTimeTraceing
-          RealTimeTracer.Trace("enqueueMessage(): messagesQueue pulsed, release lock");
-#endif
+//#if RealTimeTraceing
+//          RealTimeTracer.Trace("enqueueMessage(): messagesQueue pulsed, release lock");
+//#endif
       }
 #if RealTimeTraceing
         RealTimeTracer.Trace("enqueueMessage(): messagesQueue lock released, end");
 #endif
     }
+    // //////////////////////////////////////////
+//public void Trace(string message) {
+//  RealTimeTracer.Trace("Trace message " + message);
+//  lock (messagesQueue) {
+//    RealTimeTracer.Trace("Trace(): locked messagesQueue");
+//    messagesQueue.Enqueue(message);
+//  }
+//  RealTimeTracer.Trace("Trace(): messagesQueue lock released, end");
+//}
+    // //////////////////////////////////////////
     #endregion
 
 
@@ -405,6 +461,7 @@ namespace BaseLib {
           }
 #if RealTimeTraceing
           RealTimeTracer.Trace("TracerTimer: messageBuffer unlocked");
+          RealTimeTracer.Trace("TracerTimer: start EventHandlers");
 #endif
 
           //call event handlers for MessagesTraced
@@ -438,6 +495,60 @@ namespace BaseLib {
         RealTimeTracer.Trace("TracerTimer: completed");
 #endif
     }
+    // //////////////////////////////////////////
+//private void Timer() {
+//  try { //thread needs to catch its exceptions
+//    var wasTimerRunning = Interlocked.Exchange(ref isTracerTimerMethodRunning, 1);
+//    if (wasTimerRunning>0) {
+//      RealTimeTracer.Trace("TracerTimer: new execution was stopped, because previous timer call is still active.");
+//      return;
+//    }
+
+//    try {
+//      TraceMessage[] newTracerMessages;
+//      RealTimeTracer.Trace("TracerTimer:lock messagesQueue");
+//      lock (messagesQueue) {
+//        RealTimeTracer.Trace("TracerTimer:messagesQueue locked");
+//        if (messagesQueue.Count==0) {
+//          RealTimeTracer.Trace("TracerTimer: queue empty, unlock messagesQueue");
+//          return;
+//        }
+
+//        //collect new messages
+//        newTracerMessages = messagesQueue.ToArray();
+//        messagesQueue.Clear();
+//        RealTimeTracer.Trace("TracerTimer: read " + newTracerMessages.Length + " message(s), unlock messagesQueue");
+//      }
+//      RealTimeTracer.Trace("TracerTimer: messagesQueue unlocked");
+
+//      //copy message to messageBuffer
+//      RealTimeTracer.Trace("TracerTimer: copy messages");
+//      foreach (var message in newTracerMessages) {
+//        messageBuffer.Enqueue(message);
+//      }
+//      RealTimeTracer.Trace("TracerTimer: start EventHandlers");
+
+//      //call event handlers for MessagesTraced
+//      foreach (Action<BaseLib.TraceMessage[]> handler in MessagesTraced.GetInvocationList()) {
+//        try {
+//          handler(newTracerMessages);
+//        } catch (Exception ex) {
+//          RealTimeTracer.Trace("TracerTimer: Exception in EventHandler !!!: " + ex.Message);
+//          ShowExceptionInDebugger(ex);
+//          //todo: show exception in the other exception handlers
+//        }
+//      }
+
+//    } finally {
+//      isTracerTimerMethodRunning = 0;
+//    }
+//  } catch (Exception ex) {
+//    RealTimeTracer.Trace("TracerTimer: Exception !!!: " + ex.Message);
+//    ShowExceptionInDebugger(ex);
+//  }
+//  RealTimeTracer.Trace("TracerTimer: completed");
+//}
+    // //////////////////////////////////////////
 
 
     /// <summary>
@@ -460,26 +571,122 @@ namespace BaseLib {
     /// get processed by any MessagesTraced listeners.
     /// </summary>
     public static void Flush(bool needsStopTracing = false) {
+#if RealTimeTraceing
+      RealTimeTracer.Trace($"Flush(needsStopTracing: {needsStopTracing})");
+#endif
+
+      //if timer is running, wait until it has finished
+      if (isTracerTimerMethodRunning>0) {
+        //the messages are presently copied, just wait until copy finishes
+#if RealTimeTraceing
+        RealTimeTracer.Trace($"Flush(): Timer is running, wait for completion");
+#endif
+        do {
+#if RealTimeTraceing
+          RealTimeTracer.Trace($"Flush(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+#endif
+          Thread.Sleep(1);
+        } while (isTracerTimerMethodRunning>0);
+#if RealTimeTraceing
+        RealTimeTracer.Trace($"Flush(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+#endif
+      }
+
+      //even if timer has just run, it needs to be called again, since messages might have been added while
+      //the event handlers were executing.
+#if RealTimeTraceing
+      RealTimeTracer.Trace($"Flush(): Start tracerTimerMethod()");
+#endif
+      tracerTimerMethod(null);
+//      while (isTracerTimerMethodRunning>0) {
+//        //normally, isTracerTimerMethodRunning should be 0, except if the above mentioned raise condition occurs
+//#if RealTimeTraceing
+//        RealTimeTracer.Trace($"Flush(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+//#endif
+//        Thread.Sleep(1);
+//      }
+//#if RealTimeTraceing
+//      RealTimeTracer.Trace($"Flush(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+//#endif
+
+      if (needsStopTracing) {
+#if RealTimeTraceing
+        RealTimeTracer.Trace($"Flush(): StopTracing()");
+#endif
+        StopTracing();
+      }
+    }
+
+    public static void FlushOld(bool needsStopTracing = false) {
+#if RealTimeTraceing
+      RealTimeTracer.Trace($"Flush(needsStopTracing: {needsStopTracing})");
+#endif
       if (isTracerTimerMethodRunning>0) {
         //the messages are presently copied, just wait until copy finishes
         do {
+#if RealTimeTraceing
+          RealTimeTracer.Trace($"Flush(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+#endif
           Thread.Sleep(1);
         } while (isTracerTimerMethodRunning>0);
+#if RealTimeTraceing
+        RealTimeTracer.Trace($"Flush(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+#endif
         //nothing to copy, timer just run
 
       } else {
         //copy messages. 
         //should isTracerTimerMethodRunning change before it gets tested again in tracerTimerMethod, nothing bad happens.
+#if RealTimeTraceing
+        RealTimeTracer.Trace($"Flush(): Start tracerTimerMethod()");
+#endif
         tracerTimerMethod(null);
         while (isTracerTimerMethodRunning>0) {
           //normally, isTracerTimerMethodRunning should be 0, except if the above mentioned raise condition occurs
+#if RealTimeTraceing
+          RealTimeTracer.Trace($"Flush(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+#endif
           Thread.Sleep(1);
         }
+#if RealTimeTraceing
+        RealTimeTracer.Trace($"Flush(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+#endif
       }
       if (needsStopTracing) {
+#if RealTimeTraceing
+        RealTimeTracer.Trace($"Flush(): StopTracing()");
+#endif
         StopTracing();
       }
     }
+
+
+    // //////////////////////////////////////////
+    //public static void Flush() {
+    //  RealTimeTracer.Trace($"Flush()");
+    //  if (isTracerTimerMethodRunning>0) {
+    //    //the messages are presently copied, just wait until copy finishes
+    //    do {
+    //      RealTimeTracer.Trace($"Flush(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+    //      Thread.Sleep(1);
+    //    } while (isTracerTimerMethodRunning>0);
+    //    RealTimeTracer.Trace($"Flush(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+    //    //nothing to copy, timer just run
+
+    //  } else {
+    //    //copy messages. 
+    //    //should isTracerTimerMethodRunning change before it gets tested again in tracerTimerMethod, nothing bad happens.
+    //    RealTimeTracer.Trace($"Flush(): Start tracerTimerMethod()");
+    //    tracerTimerMethod(null);
+    //    while (isTracerTimerMethodRunning>0) {
+    //      //normally, isTracerTimerMethodRunning should be 0, except if the above mentioned raise condition occurs
+    //      RealTimeTracer.Trace($"Flush(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+    //      Thread.Sleep(1);
+    //    }
+    //    RealTimeTracer.Trace($"Flush(): isTracerTimerMethodRunning: {isTracerTimerMethodRunning}");
+    //  }
+    //}
+    // //////////////////////////////////////////
     #endregion
 
 
@@ -487,8 +694,9 @@ namespace BaseLib {
     //      -------
 
     /// <summary>
-    /// Use Throw(string) to throw an Exception with the exceptionMessage provided. Using Throw has the advantage that the debugger 
-    /// can break before the exception is thrown and all data is still available for debugging.
+    /// Use 'throw Tracer.Exception()' to throw an Exception with no exceptionMessage provided. Using Tracer.Exception()
+    /// has the advantage that the debugger can break before the exception is thrown and all data is still available for 
+    /// debugging.
     /// </summary>
     public static Exception Exception() {
       var exception = new Exception();
@@ -498,8 +706,9 @@ namespace BaseLib {
 
 
     /// <summary>
-    /// Use Throw to throw an Exception with the exceptionMessage provided. Using Throw() has the advantage that the debugger 
-    /// can break before the exception is thrown and all data is still available for debugging.
+    /// Use 'throw Tracer.Exception()' to throw an Exception with the exceptionMessage provided. Using Tracer.Exception() 
+    /// has the advantage that the debugger can break before the exception is thrown and all data is still available for 
+    /// debugging.
     /// </summary>
     public static Exception Exception(string exceptionMessage) {
       var exception = new Exception(exceptionMessage);
@@ -509,8 +718,8 @@ namespace BaseLib {
 
 
     /// <summary>
-    /// Use Throw to throw exceptions. This has the advantage that the debugger will break before the exception is thrown and
-    /// all data is still available.
+    /// Use 'throw Tracer.Exception()' to throw a specific exception. Using Tracer.Exception() has the advantage that the 
+    /// debugger will break before the exception is thrown and all data is still available.
     /// </summary>
     public static Exception Exception(Exception ex) {
 #if DEBUG
