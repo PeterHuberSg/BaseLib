@@ -290,7 +290,7 @@ namespace TracerLib {
     /// </summary>
     public static void TestSingleThread() {
       const int maxTestCycles = 10;
-      const int maxWriteCycles = Tracer.MaxMessageBuffer / maxTestCycles;
+      int maxWriteCycles = Tracer.MaxMessageBuffer / maxTestCycles;
 
       Console.WriteLine("Test Tracer with single thread and verify:");
       Console.WriteLine("Traces a running number " + maxWriteCycles + " times, then reads the trace and checks if the numbers are properly stored.");
