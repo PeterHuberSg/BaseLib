@@ -33,7 +33,7 @@ namespace RealTimeTracerTestConsole {
 
       #region RealTimeTracer Tests
       //TestRealTimeTracerSingleThread();
-      //TestRealTimeTracerMultiThread(); //most important test
+      TestRealTimeTracerMultiThread(); //most important test
       #endregion
 
       #region Increment Statement Tests, was used to test 'Interlocked.Increment(ref mainIndex) & indexMask'
