@@ -25,8 +25,8 @@ namespace BaseLib {
     private string? asString;
 
 
-    public TraceMessage(TraceTypeEnum tracrType, string message, string? filterText = null) {
-      TraceType = tracrType;
+    public TraceMessage(TraceTypeEnum traceType, string message, string? filterText = null) {
+      TraceType = traceType;
       Created = DateTime.Now;
       Message = message;
       FilterText = filterText;
